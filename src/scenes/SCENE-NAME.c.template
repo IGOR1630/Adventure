@@ -33,6 +33,7 @@ scene_data_t *SCENE-NAME_init(void)
 
 void SCENE-NAME_deinit(scene_data_t *data)
 {
+    free(data);
 }
 
 
