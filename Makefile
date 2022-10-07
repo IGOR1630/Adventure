@@ -47,6 +47,7 @@ ifeq ($(PLATFORM),PLATFORM_DESKTOP)
 		CC = clang
 	endif
 else ifeq ($(PLATFORM),PLATFORM_ANDROID)
+	CC = clang
 	CFLAGS += -fPIC
 endif
 
@@ -124,9 +125,12 @@ PATH_SEP = /
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
 	ifeq ($(PLATFORM_OS),WINDOWS)
 		PATH_SEP = \\
+		GAME_NAME_EXT := .exe
 	endif
+
+	GAME_NAME_BUILD := $(GAME_NAME)$(GAME_NAME_EXT)
 else ifeq ($(PLATFORM),PLATFORM_ANDROID)
-	GAME_NAME := lib$(GAME_NAME).so
+	GAME_NAME_BUILD := $(GAME_NAME).apk
 endif
 
 SOURCES := $(subst /,$(PATH_SEP),$(SOURCES))
@@ -145,10 +149,16 @@ endif
 
 
 #-------------------------------------------------------------------------------
-.PHONY: all
-all: $(GAME_NAME)
+ifeq ($(PLATFORM),PLATFORM_ANDROID)
+	include android/build-apk.mk
+endif
 
-$(GAME_NAME): $(OBJECTS)
+
+#-------------------------------------------------------------------------------
+.PHONY: all
+all: $(GAME_NAME_BUILD)
+
+$(GAME_NAME)$(GAME_NAME_EXT): $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
 
 $(GAME_BUILD_PATH)$(PATH_SEP)%.o: $(GAME_SOURCE_PATH)/%.c
