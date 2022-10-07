@@ -133,6 +133,7 @@ OBJECTS = $(subst $(GAME_SOURCE_PATH)$(PATH_SEP),$(GAME_BUILD_PATH)$(PATH_SEP),$
 
 #-------------------------------------------------------------------------------
 mkdir = $(shell mkdir -p $1)
+RM = rm -rf
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
 	ifeq ($(PLATFORM_OS),WINDOWS)
@@ -156,3 +157,4 @@ $(GAME_BUILD_PATH)$(PATH_SEP)%.o: $(GAME_SOURCE_PATH)/%.c
 clean:
 	$(RM) $(GAME_BUILD_PATH)
 	$(RM) $(GAME_NAME)
+
