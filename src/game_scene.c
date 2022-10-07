@@ -26,18 +26,24 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     extern void           scene_name##_deinit(scene_data_t *data);             \
                                                                                \
     extern void           scene_name##_update(scene_data_t *data);             \
-    extern void           scene_name##_render(scene_data_t *data);             \
+    extern void           scene_name##_draw(scene_data_t *data);               \
                                                                                \
     g_scenes[scene - 1] = (scene_t) {                                          \
         .init   = scene_name##_init,                                           \
         .deinit = scene_name##_deinit,                                         \
                                                                                \
         .update = scene_name##_update,                                         \
-        .render = scene_name##_render,                                         \
+        .draw   = scene_name##_draw,                                           \
     }
 
 
-static scene_t g_scenes[GAME_SCENE_COUNT - 1];
+struct {
+    scene_data_t *(* init)(void);
+    void          (* deinit)(scene_data_t *data);
+
+    void          (* update)(scene_data_t *data);
+    void          (* draw)(scene_data_t *data);
+} g_scenes[GAME_SCENE_COUNT - 1];
 
 
 void game_scene_initialize(void)
@@ -55,6 +61,6 @@ void game_scene_deinit(game_scene_t scene, scene_data_t *data)
 void game_scene_update(game_scene_t scene, scene_data_t *data)
 { g_scenes[scene - 1].update(data); }
 
-void game_scene_render(game_scene_t scene, scene_data_t *data)
-{ g_scenes[scene - 1].render(data); }
+void game_scene_draw(game_scene_t scene, scene_data_t *data)
+{ g_scenes[scene - 1].draw(data); }
 

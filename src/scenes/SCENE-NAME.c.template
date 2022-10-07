@@ -17,26 +17,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef GAME_SCENE_H
-#define GAME_SCENE_H
+#include <stdlib.h>
+#include "game_scene.h"
 
 
-typedef enum {
-    GAME_SCENE_NONE,
-    GAME_SCENE_COUNT,
-} game_scene_t;
+struct scene_data {
+};
 
 
-typedef struct scene_data scene_data_t;
+scene_data_t *SCENE-NAME_init(void)
+{
+    scene_data_t *data = malloc(sizeof(scene_data_t));
+    return data;
+}
+
+void SCENE-NAME_deinit(scene_data_t *data)
+{
+}
 
 
-void game_scene_initialize(void);
+void SCENE-NAME_update(scene_data_t *data)
+{
+}
 
-scene_data_t *game_scene_init(game_scene_t scene);
-void          game_scene_deinit(game_scene_t scene, scene_data_t *data);
-
-void          game_scene_update(game_scene_t scene, scene_data_t *data);
-void          game_scene_draw(game_scene_t scene, scene_data_t *data);
-
-#endif // !GAME_SCENE_H
+void SCENE-NAME_draw(scene_data_t *data)
+{
+}
 

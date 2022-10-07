@@ -88,7 +88,7 @@ void game_run(void)
         game_scene_update(g_game.scene.current, g_game.scene.data);
 
         BeginDrawing();
-        game_scene_render(g_game.scene.current, g_game.scene.data);
+        game_scene_draw(g_game.scene.current, g_game.scene.data);
         EndDrawing();
     }
 }

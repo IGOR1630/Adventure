@@ -116,7 +116,9 @@ endif
 
 
 #-------------------------------------------------------------------------------
-SOURCES += $(wildcard $(GAME_SOURCE_PATH)/*.c)
+SOURCES += $(wildcard $(GAME_SOURCE_PATH)/*.c) \
+           $(wildcard $(GAME_SOURCE_PATH)/scenes/*.c)
+
 PATH_SEP = /
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
