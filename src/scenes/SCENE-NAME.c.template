@@ -18,12 +18,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <stdlib.h>
-#include "game_scene.h"
-
+#include "scene.h"
 
 struct scene_data {
 };
-
 
 scene_data_t *SCENE-NAME_init(void)
 {

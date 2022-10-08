@@ -21,54 +21,68 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include "raylib.h"
 #include "game.h"
-#include "game_scene.h"
-
+#include "scene.h"
+#include "utils/hash.h"
 
 static struct {
     struct {
-        int current;
-        void *data;
+        hash(scene_t) list;
+
+        scene_t       current;
+        scene_data_t *data;
     } scene;
 
     bool running;
 } g_game;
 
-
 bool game_init(void)
 {
     memset(&g_game, 0, sizeof g_game);
 
-    g_game.scene.current = GAME_SCENE_NONE;
+    hash_create(g_game.scene.list);
+    g_game.scene.current = (scene_t) { NULL, NULL, NULL, NULL, NULL };
     g_game.scene.data = NULL;
 
     g_game.running = false;
 
     InitWindow(0, 0, "Game");
     SetTargetFPS(60);
-
-    game_scene_initialize();
+    ToggleFullscreen();
 
     return true;
 }
 
 void game_deinit(void)
 {
+    hash_destroy(g_game.scene.list);
+
     CloseWindow();
 }
 
 
-void game_set_scene(game_scene_t scene)
+void game_register_scene(scene_t scene)
+{ hash_add(g_game.scene.list, scene.name, scene); }
+
+void game_set_scene(const char *scene_name)
 {
-    if (g_game.scene.current != GAME_SCENE_NONE)
-        game_scene_deinit(g_game.scene.current, g_game.scene.data);
+    scene_t scene = (scene_t) { NULL, NULL, NULL, NULL, NULL };
+
+    if (g_game.scene.current.name != NULL) {
+        if (g_game.scene.current.name == scene_name)
+            return;
+
+        g_game.scene.current.deinit(g_game.scene.data);
+    }
+
+    if (scene_name != NULL)
+        hash_get(g_game.scene.list, scene_name, scene);
 
     g_game.scene.current = scene;
-
-    if (g_game.scene.current != GAME_SCENE_NONE)
-        g_game.scene.data = game_scene_init(g_game.scene.current);
+    if (g_game.scene.current.name != NULL)
+        g_game.scene.data = g_game.scene.current.init();
 }
 
-game_scene_t game_get_scene(void)
+scene_t game_current_scene(void)
 { return g_game.scene.current; }
 
 
@@ -81,14 +95,14 @@ void game_end_run(void)
 
 void game_run(void)
 {
-    if (g_game.scene.current != GAME_SCENE_NONE)
+    if (g_game.scene.current.name != NULL)
         g_game.running = true;
 
     while (g_game.running) {
-        game_scene_update(g_game.scene.current, g_game.scene.data);
+        g_game.scene.current.update(g_game.scene.data);
 
         BeginDrawing();
-        game_scene_draw(g_game.scene.current, g_game.scene.data);
+        g_game.scene.current.draw(g_game.scene.data);
         EndDrawing();
     }
 }
