@@ -1,7 +1,7 @@
 /*
 The GPLv3 License (GPLv3)
 
-Copyright (c) 2022 Jonatha Gabriel, Igor Nepomuceno and Renne Bispo
+Copyright (c) 2022 Jonatha Gabriel.
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
