@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GAME_H
 
 #include <stdbool.h>
+#include "raylib.h"
 #include "scene.h"
 
 bool    game_init(int width, int height);
@@ -38,6 +39,9 @@ int     game_width(void);
 int     game_height(void);
 
 Vector2 game_virtual_mouse(void);
+
+Texture game_load_texture(const char *filename, const char *name);
+Texture game_get_texture(const char *name);
 
 #endif // !GAME_H
 

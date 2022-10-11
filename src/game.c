@@ -46,6 +46,8 @@ static struct {
         Rectangle     target_destination;
     } rendering;
 
+    hash(Texture) textures;
+
     bool running;
 } g_game;
 
@@ -58,6 +60,8 @@ bool game_init(int width, int height)
     g_game.scene.data = NULL;
 
     g_game.running = false;
+
+    hash_create(g_game.textures);
 
     InitWindow(0, 0, "Game");
     SetTargetFPS(60);
@@ -90,6 +94,10 @@ bool game_init(int width, int height)
 
 void game_deinit(void)
 {
+    for (unsigned int i = 0; i < hash_size(g_game.textures); i++)
+        UnloadTexture(g_game.textures.values[i]);
+
+    hash_destroy(g_game.textures);
     hash_destroy(g_game.scene.list);
 
     UnloadRenderTexture(g_game.rendering.target);
@@ -161,5 +169,21 @@ Vector2 game_virtual_mouse(void)
     mouse.y = (mouse.y - g_game.rendering.mouse_factor.y) / g_game.rendering.scale;
 
     return mouse;
+}
+
+Texture game_load_texture(const char *filename, const char *name)
+{
+    Texture texture = LoadTexture(filename);
+    hash_add(g_game.textures, name, texture);
+
+    return texture;
+}
+
+Texture game_get_texture(const char *name)
+{
+    Texture texture = (Texture) { 0 };
+    hash_get(g_game.textures, name, texture);
+
+    return texture;
 }
 
