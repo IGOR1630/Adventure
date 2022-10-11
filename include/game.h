@@ -23,7 +23,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include "scene.h"
 
-bool    game_init(void);
+bool    game_init(int width, int height);
 void    game_deinit(void);
 
 void    game_register_scene(scene_t scene);
@@ -33,6 +33,11 @@ scene_t game_current_scene(void);
 bool    game_is_running(void);
 void    game_end_run(void);
 void    game_run(void);
+
+int     game_width(void);
+int     game_height(void);
+
+Vector2 game_virtual_mouse(void);
 
 #endif // !GAME_H
 

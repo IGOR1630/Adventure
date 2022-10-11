@@ -24,7 +24,7 @@ int main (int argc, char *argv[])
 {
     (void) argc; (void) argv;
 
-    if (!game_init())
+    if (!game_init(1280, 720))
         return EXIT_FAILURE;
 
     game_run();
