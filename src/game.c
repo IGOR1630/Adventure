@@ -66,6 +66,7 @@ bool game_init(int width, int height)
     InitWindow(0, 0, "Game");
     SetTargetFPS(60);
     ToggleFullscreen();
+    ChangeDirectory("assets");
 
     g_game.rendering.width = width;
     g_game.rendering.height = height;
