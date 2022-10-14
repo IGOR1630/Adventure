@@ -42,10 +42,10 @@
 		<Unit filename="src/game.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/game_scene.c">
+		<Unit filename="src/main.c">
 			<Option compilerVar="CC" />
 		</Unit>
-		<Unit filename="src/main.c">
+		<Unit filename="src/scenes/genmap.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Extensions>

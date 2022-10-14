@@ -17,26 +17,31 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include "game.h"
-#include "scene.h"
+#ifndef MAP_H
+#define MAP_H
 
-int main (int argc, char *argv[])
-{
-    (void) argc; (void) argv;
+#include <stdbool.h>
 
-    if (!game_init(1280, 720))
-        return EXIT_FAILURE;
+#define MAP_MAX_LAYERS 2
 
-    SCENE_IMPORT(genmap);
-    game_register_scene(SCENE(genmap));
+#define TILE(x, y) ((y) << 8 | (x))
+#define TILE_X(tile) ((tile) & 0x00FF)
+#define TILE_Y(tile) (((tile) >> 8) & 0x00FF)
 
-    game_load_texture("map-sprites.png", "map-sprites");
+typedef unsigned short int tile_t;
 
-    game_set_scene("genmap");
-    game_run();
+typedef struct map {
+    tile_t **tiles[MAP_MAX_LAYERS];
 
-    game_deinit();
-    return EXIT_SUCCESS;
-}
+    int width;
+    int height;
+} map_t;
+
+void   map_create(map_t *map, int width, int height);
+bool   map_load(map_t *map, const char *filename);
+void   map_destroy(map_t *map);
+
+void   map_save(map_t *map, const char *filename);
+
+#endif // !MAP_H
 
