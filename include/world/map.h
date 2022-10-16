@@ -24,8 +24,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAP_MAX_LAYERS 2
 
-#define TILE(x, y) ((y) << 8 | (x))
-#define TILE_X(tile) ((tile) & 0x00FF)
+#define TILE(x, y)   ((y) << 8 | (x))
+
+#define TILE_X(tile) (((tile) >> 0) & 0x00FF)
 #define TILE_Y(tile) (((tile) >> 8) & 0x00FF)
 
 typedef unsigned short int tile_t;
