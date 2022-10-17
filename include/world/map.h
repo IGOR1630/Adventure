@@ -24,12 +24,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAP_MAX_LAYERS 2
 
-#define TILE(x, y)   ((y) << 8 | (x))
+#define TILE(x, y, rotation) ((rotation) << 20 | (y) << 12 | (x))
 
-#define TILE_X(tile) (((tile) >> 0) & 0x00FF)
-#define TILE_Y(tile) (((tile) >> 8) & 0x00FF)
+#define TILE_X(tile)         (((tile) >> 0)  & 0x00000FFF)
+#define TILE_Y(tile)         (((tile) >> 12) & 0x000000FF)
+#define TILE_ROTATION(tile)  (((tile) >> 20) & 0x00000FFF)
 
-typedef unsigned short int tile_t;
+typedef unsigned int tile_t;
 
 typedef struct map {
     tile_t **tiles[MAP_MAX_LAYERS];
@@ -38,11 +39,11 @@ typedef struct map {
     int height;
 } map_t;
 
-void   map_create(map_t *map, int width, int height);
-bool   map_load(map_t *map, const char *filename);
-void   map_destroy(map_t *map);
+void map_create(map_t *map, int width, int height);
+bool map_load(map_t *map, const char *filename);
+void map_destroy(map_t *map);
 
-void   map_save(map_t *map, const char *filename);
+void map_save(map_t *map, const char *filename);
 
 #endif // !MAP_H
 

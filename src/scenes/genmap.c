@@ -123,11 +123,7 @@ void genmap_draw(scene_data_t *data)
 {
     Texture spritesheet = game_get_texture("map-sprites");
 
-    Rectangle tile = {
-        .x = 0,
-        .y = 0,
-    };
-
+    Rectangle tile;
     Rectangle sprite = {
         .x = 0,
         .y = 0,
@@ -136,6 +132,8 @@ void genmap_draw(scene_data_t *data)
         .height = 16,
     };
 
+    Vector2 tile_rotation_origin;
+
     // The tile is a square, therefore, have the same size each side. This also
     // fix a bug of little gaps between some tiles when drawing due the previous
     // calculation was producing different sizes for each side.
@@ -143,11 +141,17 @@ void genmap_draw(scene_data_t *data)
     // Previous calculation:
     //   width = (float) game_width() / data->map.width
     //   height = (float) game_height() / data->map.height
-    tile.width = tile.height = (float) game_width() / data->map.width,
+    tile.width = tile.height = (float) game_width() / data->map.width;
+
+    // The origin of rotation of the image is the center of the image that has
+    // sane size sides.
+    tile_rotation_origin.x = tile_rotation_origin.y = tile.width / 2;
 
     ClearBackground(BLACK);
+
+    tile.y = tile_rotation_origin.y;
     for (int y = 0; y < data->map.height; y++) {
-        tile.x = 0;
+        tile.x = tile_rotation_origin.x;
 
         for (int x = 0; x < data->map.width; x++) {
             switch (data->generation_stage) {
@@ -162,8 +166,8 @@ void genmap_draw(scene_data_t *data)
                 sprite.y = TILE_Y(data->map.tiles[0][y][x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
-                DrawTexturePro(spritesheet, sprite, tile, (Vector2) { 0, 0 }, 0,
-                    WHITE);
+                DrawTexturePro(spritesheet, sprite, tile, tile_rotation_origin,
+                    TILE_ROTATION(data->map.tiles[0][y][x]), WHITE);
                 break;
             }
 
@@ -224,6 +228,10 @@ static void genmap_stage1(scene_data_t *data)
 
 static void genmap_stage2(scene_data_t *data)
 {
+#define TEST_NEIGHBORS(must_have, can_have, action)                            \
+    if ((neighbors & (must_have)) == (must_have) && !(neighbors & ~(can_have))) \
+        next.tiles[0][y][x] = (action)
+
     int neighbors;
     map_t next;
 
@@ -237,42 +245,36 @@ static void genmap_stage2(scene_data_t *data)
             if (data->map.tiles[0][y][x] == 0) {
                 neighbors = stage2_find_neighbors(&data->map, x, y);
 
-                if (neighbors == 0)
-                    next.tiles[0][y][x] = TILE(rand() % 2, 0);
-                else if ((neighbors & 0x10) && !(neighbors & 0x6B))
-                    next.tiles[0][y][x] = TILE(4, 1);
-                else if ((neighbors & 0x08) && !(neighbors & 0xD6))
-                    next.tiles[0][y][x] = TILE(2, 1);
-                else if ((neighbors & 0x02) && !(neighbors & 0xF8))
-                    next.tiles[0][y][x] = TILE(3, 0);
-                else if ((neighbors & 0x40) && !(neighbors & 0x1F))
-                    next.tiles[0][y][x] = TILE(3, 2);
-                else if ((neighbors & 0x0B) == 0x0B && !(neighbors & 0xD0))
-                    next.tiles[0][y][x] = TILE(2, 0);
-                else if ((neighbors & 0x16) == 0x16 && !(neighbors & 0x68))
-                    next.tiles[0][y][x] = TILE(4, 0);
-                else if ((neighbors & 0x68) == 0x68 && !(neighbors & 0x16))
-                    next.tiles[0][y][x] = TILE(2, 2);
-                else if ((neighbors & 0xD0) == 0xD0 && !(neighbors & 0x0B))
-                    next.tiles[0][y][x] = TILE(4, 2);
-                else if (neighbors == 0x80)
-                    next.tiles[0][y][x] = TILE(0, 1);
-                else if (neighbors == 0x20)
-                    next.tiles[0][y][x] = TILE(1, 1);
-                else if (neighbors == 0x04)
-                    next.tiles[0][y][x] = TILE(0, 2);
-                else if (neighbors == 0x01)
-                    next.tiles[0][y][x] = TILE(1, 2);
-                else
-                    next.tiles[0][y][x] = TILE(3, 1);
+                // Center
+                TEST_NEIGHBORS(0x00, 0x00, TILE(0, 0, (rand() % 4) * 90));
+
+                // Sides
+                TEST_NEIGHBORS(0x02, 0x07, TILE(3, 0, 0));
+                TEST_NEIGHBORS(0x10, 0x94, TILE(3, 0, 90));
+                TEST_NEIGHBORS(0x40, 0xE0, TILE(3, 0, 180));
+                TEST_NEIGHBORS(0x08, 0x29, TILE(3, 0, 270));
+
+                // Diagonals
+                TEST_NEIGHBORS(0x0B, 0x2F, TILE(2, 0, 0));
+                TEST_NEIGHBORS(0x16, 0x97, TILE(2, 0, 90));
+                TEST_NEIGHBORS(0xD0, 0xF4, TILE(2, 0, 180));
+                TEST_NEIGHBORS(0x68, 0xE9, TILE(2, 0, 270));
+
+                // Corners
+                TEST_NEIGHBORS(0x80, 0x80, TILE(0, 1, 0));
+                TEST_NEIGHBORS(0x20, 0x20, TILE(0, 1, 90));
+                TEST_NEIGHBORS(0x04, 0x04, TILE(0, 1, 270));
+                TEST_NEIGHBORS(0x01, 0x01, TILE(0, 1, 180));
             } else {
-                next.tiles[0][y][x] = TILE(5, rand() % 2);
+                next.tiles[0][y][x] = TILE(5, 0, (rand() % 4) * 90);
             }
         }
     }
 
     map_destroy(&data->map);
     data->map = next;
+
+#undef TEST_NEIGHBORS
 }
 
 static int stage1_count_neighbors(map_t *map, int x, int y)
