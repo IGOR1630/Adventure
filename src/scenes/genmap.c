@@ -126,9 +126,6 @@ void genmap_draw(scene_data_t *data)
     Rectangle tile = {
         .x = 0,
         .y = 0,
-
-        .width = (float) game_width() / data->map.width,
-        .height = (float) game_height() / data->map.height,
     };
 
     Rectangle sprite = {
@@ -138,6 +135,15 @@ void genmap_draw(scene_data_t *data)
         .width = 16,
         .height = 16,
     };
+
+    // The tile is a square, therefore, have the same size each side. This also
+    // fix a bug of little gaps between some tiles when drawing due the previous
+    // calculation was producing different sizes for each side.
+    //
+    // Previous calculation:
+    //   width = (float) game_width() / data->map.width
+    //   height = (float) game_height() / data->map.height
+    tile.width = tile.height = (float) game_width() / data->map.width,
 
     ClearBackground(BLACK);
     for (int y = 0; y < data->map.height; y++) {
