@@ -24,11 +24,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAP_MAX_LAYERS 2
 
-#define TILE(x, y, rotation) ((rotation) << 20 | (y) << 12 | (x))
+#define TILE(x, y, rotation) (1u << 31 | (rotation) << 20 | (y) << 12 | (x))
 
 #define TILE_X(tile)         (((tile) >> 0)  & 0x00000FFF)
 #define TILE_Y(tile)         (((tile) >> 12) & 0x000000FF)
-#define TILE_ROTATION(tile)  (((tile) >> 20) & 0x00000FFF)
+#define TILE_ROTATION(tile)  (((tile) >> 20) & 0x000007FF)
+
+#define TILE_IS_EMPTY(tile)  (!((tile) & 1u << 31))
+
+#define TILE_IS(tile, x, y)  (TILE_X(tile) == (x) && TILE_Y(tile) == (y))
 
 typedef unsigned int tile_t;
 

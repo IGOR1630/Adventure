@@ -17,6 +17,7 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -25,15 +26,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "scene.h"
 #include "world/map.h"
 
-#define GENMAP_MAP_BASE_SIZE       30
-#define GENMAP_MAP_LAND_SPAWN_RATE (50.0 / 100.0)
+#define GENMAP_MAP_BASE_SIZE          40
+#define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
+#define GENMAP_TREE_GENERATION_FACTOR (10.0 / 100.0)
 
-#define GENMAP_STEP_CHANGE_DELAY   (100.0 / 1000.0)
+#define GENMAP_STEP_CHANGE_DELAY      (100.0 / 1000.0)
+
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
 
 enum {
     GENMAP_STEPS_STAGE0 = 1,
     GENMAP_STEPS_STAGE1 = 10,
-    GENMAP_STEPS_STAGE2 = 1,
+    GENMAP_STEPS_STAGE2 = 5,
 };
 
 struct scene_data {
@@ -44,11 +48,14 @@ struct scene_data {
     int    generation_steps;
     int    generation_stage;
     double generation_stage_time;
+
+    Texture spritesheet;
 };
 
 static void genmap_stage0(scene_data_t *data);
 static void genmap_stage1(scene_data_t *data);
 static void genmap_stage2(scene_data_t *data);
+static void genmap_stage3(scene_data_t *data);
 
 // Helper functions
 static int stage1_count_neighbors(map_t *map, int x, int y);
@@ -83,6 +90,8 @@ scene_data_t *genmap_init(void)
     data->generation_stage = 0;
     data->generation_stage_time = 0;
 
+    data->spritesheet = game_get_texture("map-sprites");
+
     return data;
 }
 
@@ -109,8 +118,11 @@ void genmap_update(scene_data_t *data)
     case 2:
         genmap_stage2(data);
         break;
-    //default:
-       // game_set_scene("gameplay");
+    case 3:
+        genmap_stage3(data);
+        break;
+    default:
+        game_set_scene("gameplay");
     }
 
     if (--data->generation_steps == 0)
@@ -121,8 +133,7 @@ void genmap_update(scene_data_t *data)
 
 void genmap_draw(scene_data_t *data)
 {
-    Texture spritesheet = game_get_texture("map-sprites");
-
+    int draw_layers;
     Rectangle tile;
     Rectangle sprite = {
         .x = 0,
@@ -141,7 +152,8 @@ void genmap_draw(scene_data_t *data)
     // Previous calculation:
     //   width = (float) game_width() / data->map.width
     //   height = (float) game_height() / data->map.height
-    tile.width = tile.height = (float) game_width() / data->map.width;
+    tile.width = tile.height = MIN((float) game_width() / data->map.width,
+        (float) game_height() / data->map.height);
 
     // The origin of rotation of the image is the center of the image that has
     // sane size sides.
@@ -156,19 +168,31 @@ void genmap_draw(scene_data_t *data)
         for (int x = 0; x < data->map.width; x++) {
             switch (data->generation_stage) {
             case 0: case 1:
+                draw_layers = 0;
                 if (data->map.tiles[0][y][x] != 0)
                     DrawRectangleRec(tile, WHITE);
                 break;
+            case 2:
+                draw_layers = 1;
+                break;
             default:
-                sprite.x = TILE_X(data->map.tiles[0][y][x]);
+                draw_layers = 2;
+                break;
+            }
+
+            for (int layer = 0; layer < draw_layers; layer++) {
+                if (TILE_IS_EMPTY(data->map.tiles[layer][y][x]))
+                    break;
+
+                sprite.x = TILE_X(data->map.tiles[layer][y][x]);
                 sprite.x = sprite.x * sprite.width + 1 * sprite.x;
 
-                sprite.y = TILE_Y(data->map.tiles[0][y][x]);
+                sprite.y = TILE_Y(data->map.tiles[layer][y][x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
-                DrawTexturePro(spritesheet, sprite, tile, tile_rotation_origin,
-                    TILE_ROTATION(data->map.tiles[0][y][x]), WHITE);
-                break;
+                DrawTexturePro(data->spritesheet, sprite, tile,
+                    tile_rotation_origin,
+                    TILE_ROTATION(data->map.tiles[layer][y][x]), WHITE);
             }
 
             tile.x += tile.width;
@@ -237,6 +261,10 @@ static void genmap_stage2(scene_data_t *data)
 
     if (data->generation_steps == 0)
         data->generation_steps = GENMAP_STEPS_STAGE2;
+    else
+        // Only the first pass on this stage are needed, the others are for see
+        // the result.
+        return;
 
     map_create(&next, data->map.width, data->map.height);
 
@@ -244,9 +272,7 @@ static void genmap_stage2(scene_data_t *data)
         for (int x = 0; x < data->map.width; x++) {
             if (data->map.tiles[0][y][x] == 0) {
                 neighbors = stage2_find_neighbors(&data->map, x, y);
-
-                // Center
-                TEST_NEIGHBORS(0x00, 0x00, TILE(0, 0, (rand() % 4) * 90));
+                next.tiles[0][y][x] = TILE(0, 0, (rand() % 4) * 90);
 
                 // Sides
                 TEST_NEIGHBORS(0x02, 0x07, TILE(3, 0, 0));
@@ -277,11 +303,54 @@ static void genmap_stage2(scene_data_t *data)
 #undef TEST_NEIGHBORS
 }
 
+static void genmap_stage3(scene_data_t *data)
+{
+    int floors_count = 0;
+    int tree_x, tree_y;
+
+    int trees_to_generate;
+
+    bool tree_generated;
+
+    // The total steps is determined by the number of trees that should be
+    // generated.
+    if (data->generation_steps == 0) {
+        for (int y = 0; y < data->map.height; y++)
+            for (int x = 0; x < data->map.width; x++)
+                if (TILE_IS(data->map.tiles[0][y][x], 5, 0))
+                    floors_count++;
+
+        data->generation_steps = floors_count * GENMAP_TREE_GENERATION_FACTOR;
+    }
+
+    trees_to_generate = ceil(data->generation_steps * GENMAP_TREE_GENERATION_FACTOR);
+    for (int tree = 0; tree < trees_to_generate; tree++) {
+        tree_generated = false;
+
+        do {
+
+            tree_x = rand() % data->map.width;
+            tree_y = rand() % data->map.height;
+
+            if (TILE_IS(data->map.tiles[0][tree_y][tree_x], 5, 0)
+                    && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 0][tree_x])
+                    && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 1][tree_x]))
+                tree_generated = true;
+        } while (!tree_generated);
+
+        data->map.tiles[1][tree_y - 0][tree_x] = TILE(16, 11, 0);
+        data->map.tiles[1][tree_y - 1][tree_x] = TILE(16, 10, 0);
+    }
+
+    data->generation_steps -= trees_to_generate;
+    if (data->generation_steps == 0)
+        data->generation_steps++;
+}
+
 static int stage1_count_neighbors(map_t *map, int x, int y)
 {
     int next_x, next_y;
     int neighbors = 0;
-
 
     for (int offset_y = -1; offset_y <= 1; offset_y++) {
         next_y = y + offset_y;
