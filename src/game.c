@@ -141,11 +141,15 @@ void game_run(void)
     if (g_game.scene.current.name != NULL)
         g_game.running = true;
 
-    while (g_game.running) {
-        g_game.scene.current.update(g_game.scene.data);
+    while (g_game.running && g_game.scene.current.name != NULL) {
+        if (g_game.scene.current.name != NULL)
+            g_game.scene.current.update(g_game.scene.data);
 
         BeginTextureMode(g_game.rendering.target);
-        g_game.scene.current.draw(g_game.scene.data);
+
+        if (g_game.scene.current.name != NULL)
+            g_game.scene.current.draw(g_game.scene.data);
+
         EndTextureMode();
 
         BeginDrawing();
@@ -155,6 +159,8 @@ void game_run(void)
             (Vector2) { 0, 0 }, 0, WHITE);
         EndDrawing();
     }
+
+    g_game.running = false;
 }
 
 int game_width(void)
@@ -166,6 +172,7 @@ int game_height(void)
 Vector2 game_virtual_mouse(void)
 {
     Vector2 mouse = GetMousePosition();
+
     mouse.x = (mouse.x - g_game.rendering.mouse_factor.x) / g_game.rendering.scale;
     mouse.y = (mouse.y - g_game.rendering.mouse_factor.y) / g_game.rendering.scale;
 
