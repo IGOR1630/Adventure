@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define GAME_H
 
 #include <stdbool.h>
+#include <stdio.h>
 #include "raylib.h"
 #include "scene.h"
 
@@ -37,6 +38,8 @@ void    game_run(void);
 
 int     game_width(void);
 int     game_height(void);
+
+FILE   *game_file(const char *mode);
 
 Vector2 game_virtual_mouse(void);
 

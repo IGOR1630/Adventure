@@ -169,6 +169,19 @@ int game_width(void)
 int game_height(void)
 { return g_game.rendering.height; }
 
+FILE *game_file(const char *mode)
+{
+    char filename[200] = "game.sav";
+    FILE *file;
+
+    if ((file = fopen(filename, mode)) == NULL) {
+        sprintf(filename, "/storage/emulated/0/game.sav");
+        file = fopen(filename, mode);
+    }
+
+    return file;
+}
+
 Vector2 game_virtual_mouse(void)
 {
     Vector2 mouse = GetMousePosition();
