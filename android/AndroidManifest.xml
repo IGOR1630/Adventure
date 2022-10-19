@@ -2,9 +2,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
         package="com.jirgames.game"
         android:versionCode="1" android:versionName="1.0" >
-    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="29"/>
+    <uses-sdk android:minSdkVersion="23" android:targetSdkVersion="26"/>
     <uses-feature android:glEsVersion="0x00020000" android:required="true"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
     <application android:allowBackup="false" android:label="Game" android:hasCode="false">
         <activity android:name="android.app.NativeActivity"
             android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
