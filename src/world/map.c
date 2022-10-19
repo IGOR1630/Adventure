@@ -23,7 +23,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include "game.h"
 #include "world/map.h"
+
+static FILE *map_goto_section(void);
 
 void map_create(map_t *map, int width, int height)
 {
@@ -38,63 +41,64 @@ void map_create(map_t *map, int width, int height)
     map->height = height;
 }
 
-bool map_load(map_t *map, const char *filename)
+bool map_load(map_t *map)
 {
     int c;
 
     int layer;
-    int width;
-    int height;
 
-    tile_t **tiles;
+    char token[21];
 
-    FILE *map_file;
+    bool open_map_section = false;
+    bool map_section_found = false;
 
+    FILE *file;
 
-    if ((map_file = fopen(filename, "r")) == NULL)
+    if ((file = map_goto_section()) == NULL)
         return false;
 
-    map->width  = 0;
-    map->height = 0;
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '<') {
+            fscanf(file, "%20s", token);
 
-    while ((c = fgetc(map_file)) != EOF) {
-        // Ignore commented lines
-        if (c == '#')
-            while ((c = fgetc(map_file)) != '\n');
+            if (strcmp(token, "Map") == 0) {
+                open_map_section = true;
+                map_section_found = true;
 
-        if (c == '!') {
-            // Read the layer level and ignore any other character
-            layer = 0;
-            while ((c = fgetc(map_file)) != '\n')
-                layer += c == '!' ? 1 : 0;
+                fscanf(file, "%u %u", &map->width, &map->height);
+            } else if (open_map_section && strcmp(token, "Layer") == 0) {
+                fscanf(file, "%u", &layer);
 
-            // Read the layer data until find the end section mark
-            height = 0;
-            tiles  = NULL;
-            while ((c = fgetc(map_file)) != '~') {
-                tiles = realloc(tiles, sizeof(tile_t *) * (++height));
-                tiles[height - 1] = malloc(sizeof(tile_t) * (width = 1));
+                // Discard the newline character preceded by layer declaration
+                fgetc(file);
 
-                while ((c = fgetc(map_file)) != '\n') {
-                    if (isdigit(c))
-                        tiles[height - 1][width - 1] = (c - '0') +
-                            tiles[height - 1][width - 1] * 10;
-                    else
-                        tiles[height - 1] = realloc(tiles[height - 1],
-                            sizeof(tile_t) * (++width));
+                map->tiles[layer] = malloc(sizeof(tile_t *) * map->height);
+                for (int y = 0; y < map->height; y++) {
+                    map->tiles[layer][y] = malloc(sizeof(tile_t) * map->width);
+                    fread(map->tiles[layer][y], sizeof(tile_t), map->width, file);
                 }
+            } else if (open_map_section) {
+                break;
             }
+        } else if (c == '>') {
+            fscanf(file, "%20s", token);
 
-            map->tiles[layer] = tiles;
-
-            // Store the map dimensions
-            map->width  = map->width  < width  ? width  : map->width;
-            map->height = map->height < height ? height : map->height;
+            if (strcmp(token, "Map") == 0) {
+                open_map_section = false;
+                break;
+            } else if (open_map_section && strcmp(token, "Layer") == 0) {
+                continue;
+            } else if (open_map_section) {
+                break;
+            }
         }
     }
 
-    fclose(map_file);
-    return true;
+    if (open_map_section)
+        map_destroy(map);
+
+    fclose(file);
+    return map_section_found && !open_map_section;
 }
 
 void map_destroy(map_t *map)
@@ -112,34 +116,93 @@ void map_destroy(map_t *map)
     map->height = 0;
 }
 
-void map_save(map_t *map, const char *filename)
+bool map_save(map_t *map)
 {
-    FILE *map_file;
+    FILE *file;
 
+    if ((file = map_goto_section()) == NULL)
+        return false;
 
-    if ((map_file = fopen(filename, "w")) == NULL)
-        return;
-
-    fprintf(map_file, "# Game map, don't modify!\n");
-    fprintf(map_file, "# Auto generated game map file.\n\n");
-
+    fprintf(file, "<Map %u %u\n", map->width, map->height);
     for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
-        fprintf(map_file, "%*s Map layer: %d\n", layer, "!!!!!", layer + 1);
+        fprintf(file, "<Layer %u\n", layer);
 
-        for (int y = 0; y < map->height; y++) {
-            for (int x = 0; x < map->width; x++) {
-                fprintf(map_file, "%d", map->tiles[layer][y][x]);
+        for (int y = 0; y < map->height; y++)
+            fwrite(map->tiles[layer][y], sizeof(tile_t), map->width, file);
 
-                if (x + 1 < map->width)
-                    fprintf(map_file, " ");
-            }
-
-            fprintf(map_file, "\n");
-        }
-
-        fprintf(map_file, "~\n\n");
+        fprintf(file, "\n>Layer\n");
     }
 
-    fclose(map_file);
+    fprintf(file, ">Map\n");
+    fclose(file);
+
+    return true;
+}
+
+bool map_exists(void)
+{
+    int c;
+
+    char token[21];
+
+    bool open_map_section = false;
+    bool map_section_found = false;
+
+    FILE *file;
+
+    if ((file = game_file("r")) == NULL)
+        return false;
+
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '<') {
+            fscanf(file, "%20s", token);
+
+            if (strcmp(token, "Map") == 0) {
+                open_map_section = true;
+                map_section_found = true;
+            }
+        } else if (c == '>') {
+            fscanf(file, "%20s", token);
+
+            if (strcmp(token, "Map") == 0) {
+                open_map_section = false;
+                break;
+            }
+        }
+    }
+
+    fclose(file);
+    return map_section_found && !open_map_section;
+}
+
+static FILE *map_goto_section(void)
+{
+    int c;
+
+    char token[21];
+
+    fpos_t pos;
+
+    FILE *file;
+
+    if ((file = game_file("r+")) == NULL)
+        return (file = game_file("w"));
+
+    fgetpos(file, &pos);
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '<') {
+            fscanf(file, "%20s", token);
+
+            if (strcmp(token, "Map") == 0) {
+                fsetpos(file, &pos);
+                return file;
+            }
+        }
+
+        fgetpos(file, &pos);
+    }
+
+    fclose(file);
+    return (file = game_file("a"));
 }
 

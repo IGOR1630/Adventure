@@ -72,7 +72,7 @@ scene_data_t *genmap_init(void)
     srand(time(NULL));
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
-    if (!map_load(&data->map, "game-island.map")) {
+    if (!map_exists()) {
         if (width < height) {
             map_width = GENMAP_MAP_BASE_SIZE;
             map_height = ((float) height / width) * map_width;
@@ -82,6 +82,12 @@ scene_data_t *genmap_init(void)
         }
 
         map_create(&data->map, map_width, map_height);
+    } else {
+        // Jump to the last stage that change to game scene
+        data->generation_stage = 4;
+        data->generation_stage_time = 0;
+
+        return data;
     }
 
     data->map_border_size = 5;
@@ -97,9 +103,10 @@ scene_data_t *genmap_init(void)
 
 void genmap_deinit(scene_data_t *data)
 {
-    map_save(&data->map, "game-island.map");
-    map_destroy(&data->map);
+    if (!map_exists())
+        map_save(&data->map);
 
+    map_destroy(&data->map);
     free(data);
 }
 
@@ -123,6 +130,7 @@ void genmap_update(scene_data_t *data)
         break;
     default:
         game_set_scene("gameplay");
+        return;
     }
 
     if (--data->generation_steps == 0)
@@ -133,7 +141,8 @@ void genmap_update(scene_data_t *data)
 
 void genmap_draw(scene_data_t *data)
 {
-    int draw_layers;
+    int draw_layers = 0;
+
     Rectangle tile;
     Rectangle sprite = {
         .x = 0,
@@ -175,7 +184,7 @@ void genmap_draw(scene_data_t *data)
             case 2:
                 draw_layers = 1;
                 break;
-            default:
+            case 3:
                 draw_layers = 2;
                 break;
             }

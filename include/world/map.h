@@ -44,10 +44,12 @@ typedef struct map {
 } map_t;
 
 void map_create(map_t *map, int width, int height);
-bool map_load(map_t *map, const char *filename);
+bool map_load(map_t *map);
 void map_destroy(map_t *map);
 
-void map_save(map_t *map, const char *filename);
+bool map_save(map_t *map);
+
+bool map_exists(void);
 
 #endif // !MAP_H
 
