@@ -28,10 +28,17 @@ int main (int argc, char *argv[])
     if (!game_init(1280, 720))
         return EXIT_FAILURE;
 
-    SCENE_IMPORT(genmap);
-    game_register_scene(SCENE(genmap));
+    { // Scenes
+        SCENE_IMPORT(genmap);
+        game_register_scene(SCENE(genmap));
 
-    game_load_texture("map-sprites.png", "map-sprites");
+        SCENE_IMPORT(gameplay);
+        game_register_scene(SCENE(gameplay));
+    }
+
+    { // Resources
+        game_load_texture("map-sprites.png", "map-sprites");
+    }
 
     game_set_scene("genmap");
     game_run();

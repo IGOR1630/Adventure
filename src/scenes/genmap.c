@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "scene.h"
 #include "world/map.h"
 
-#define GENMAP_MAP_BASE_SIZE          40
+#define GENMAP_MAP_BASE_SIZE          350
 #define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
 #define GENMAP_TREE_GENERATION_FACTOR (10.0 / 100.0)
 
@@ -145,9 +145,6 @@ void genmap_draw(scene_data_t *data)
 
     Rectangle tile;
     Rectangle sprite = {
-        .x = 0,
-        .y = 0,
-
         .width = 16,
         .height = 16,
     };
