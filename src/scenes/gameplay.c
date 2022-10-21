@@ -23,10 +23,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "scene.h"
 #include "world/map.h"
 
-#define GAMEPLAY_TILE_SIZE 32.0
+#ifdef PLATFORM_ANDROID
+#include "ui/virtual_joystick.h"
+#endif // PLATFORM_ANDROID
+
+#define GAMEPLAY_TILE_SIZE 64.0
 
 struct scene_data {
     map_t map;
+
+#ifdef PLATFORM_ANDROID
+    virtual_joystick_t virtual_joystick;
+#endif // PLATFORM_ANDROID
 
     Rectangle camera;
     Texture spritesheet;
@@ -39,6 +47,10 @@ scene_data_t *gameplay_init(void)
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
     map_load(&data->map);
+
+#ifdef PLATFORM_ANDROID
+    virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
+#endif // PLATFORM_ANDROID
 
     data->camera = (Rectangle) {
         .x = 0,
@@ -66,6 +78,21 @@ void gameplay_deinit(scene_data_t *data)
 
 void gameplay_update(scene_data_t *data)
 {
+    Vector2 direction = { 0, 0 };
+
+#ifdef PLATFORM_ANDROID
+    direction = virtual_joystick_update(&data->virtual_joystick);
+#else
+    if (IsKeyDown(KEY_W))
+        direction.y = 1;
+    else if (IsKeyDown(KEY_S))
+        direction.y = -1;
+
+    if (IsKeyDown(KEY_D))
+        direction.x = 1;
+    else if (IsKeyDown(KEY_A))
+        direction.x = -1;
+#endif // PLATFORM_ANDROID
 }
 
 void gameplay_draw(scene_data_t *data)
@@ -73,6 +100,10 @@ void gameplay_draw(scene_data_t *data)
     ClearBackground(BLACK);
 
     gameplay_draw_map(data);
+
+#ifdef PLATFORM_ANDROID
+    virtual_joystick_draw(&data->virtual_joystick);
+#endif // PLATFORM_ANDROID
 }
 
 static void gameplay_draw_map(scene_data_t *data)
