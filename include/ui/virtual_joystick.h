@@ -17,36 +17,27 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include "game.h"
-#include "scene.h"
+#ifndef VIRTUAL_JOYSTICK_H
+#define VIRTUAL_JOYSTICK_H
 
-int main (int argc, char *argv[])
-{
-    (void) argc; (void) argv;
+#include <stdbool.h>
+#include "raylib.h"
 
-    if (!game_init(1280, 720))
-        return EXIT_FAILURE;
+typedef struct {
+    float radius;
 
-    { // Scenes
-        SCENE_IMPORT(genmap);
-        game_register_scene(SCENE(genmap));
+    bool is_move_started;
 
-        SCENE_IMPORT(gameplay);
-        game_register_scene(SCENE(gameplay));
-    }
+    // Base and Top of the joystick
+    Vector2 centers[2];
+    Texture textures[2];
+} virtual_joystick_t;
 
-    { // Resources
-        game_load_texture("map-sprites.png", "map-sprites");
+void virtual_joystick_init(virtual_joystick_t *joystick, float radius,
+    float center_x, float center_y);
 
-        game_load_texture("joystick_base.png", "joy-base");
-        game_load_texture("joystick_top.png", "joy-top");
-    }
+void virtual_joystick_update(virtual_joystick_t *joystick, Vector2 *move);
+void virtual_joystick_draw(virtual_joystick_t *joystick);
 
-    game_set_scene("genmap");
-    game_run();
-
-    game_deinit();
-    return EXIT_SUCCESS;
-}
+#endif // !VIRTUAL_JOYSTICK_H
 
