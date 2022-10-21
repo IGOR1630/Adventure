@@ -36,7 +36,7 @@ typedef struct {
 void virtual_joystick_init(virtual_joystick_t *joystick, float radius,
     float center_x, float center_y);
 
-void virtual_joystick_update(virtual_joystick_t *joystick, Vector2 *direction);
+Vector2 virtual_joystick_update(virtual_joystick_t *joystick);
 void virtual_joystick_draw(virtual_joystick_t *joystick);
 
 #endif // !VIRTUAL_JOYSTICK_H

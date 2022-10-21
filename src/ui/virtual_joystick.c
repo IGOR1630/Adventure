@@ -39,16 +39,17 @@ void virtual_joystick_init(virtual_joystick_t *joystick, float radius,
     joystick->is_move_started = false;
 }
 
-void virtual_joystick_update(virtual_joystick_t *joystick, Vector2 *direction)
+Vector2 virtual_joystick_update(virtual_joystick_t *joystick)
 {
     float displacement;
 
+    Vector2 direction;
     Vector2 mouse = game_virtual_mouse();
 
     if (mouse.x < game_width() / 2) {
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
-            direction->x = (mouse.x -= joystick->centers[0].x) / joystick->radius;
-            direction->y = (mouse.y -= joystick->centers[0].y) / joystick->radius;
+            direction.x = mouse.x -= joystick->centers[0].x;
+            direction.y = mouse.y -= joystick->centers[0].y;
 
             displacement = sqrt(pow(mouse.x, 2) + pow(mouse.y, 2));
             if (displacement > joystick->radius) {
@@ -66,7 +67,7 @@ void virtual_joystick_update(virtual_joystick_t *joystick, Vector2 *direction)
             if (joystick->is_move_started)
                 joystick->centers[1] = mouse;
             else
-                direction->x = direction->y = 0;
+                direction.x = direction.y = 0;
         } else if (IsMouseButtonUp(MOUSE_BUTTON_LEFT)) {
             joystick->is_move_started = false;
             joystick->centers[1] = joystick->centers[0];
@@ -75,6 +76,11 @@ void virtual_joystick_update(virtual_joystick_t *joystick, Vector2 *direction)
         joystick->is_move_started = false;
         joystick->centers[1] = joystick->centers[0];
     }
+
+    return (Vector2) {
+        .x = direction.x > 0 ? 1 : (direction.x < 0 ? -1 : 0),
+        .y = direction.y > 0 ? 1 : (direction.y < 0 ? -1 : 0),
+    };
 }
 
 void virtual_joystick_draw(virtual_joystick_t *joystick)
