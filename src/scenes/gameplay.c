@@ -32,6 +32,8 @@ struct scene_data {
     Texture spritesheet;
 };
 
+static void gameplay_draw_map(scene_data_t *data);
+
 scene_data_t *gameplay_init(void)
 {
     scene_data_t *data = malloc(sizeof(scene_data_t));
@@ -42,8 +44,10 @@ scene_data_t *gameplay_init(void)
         .x = 0,
         .y = 0,
 
-        .width = ceil((float) game_width() / GAMEPLAY_TILE_SIZE),
-        .height = ceil((float) game_height() / GAMEPLAY_TILE_SIZE),
+        // +1 because it's needed to draw one line/column more to fill gaps when
+        // drawing a camera that hasn't a integer value.
+        .width = ceil((float) game_width() / GAMEPLAY_TILE_SIZE) + 1,
+        .height = ceil((float) game_height() / GAMEPLAY_TILE_SIZE) + 1,
     };
 
     data->spritesheet = game_get_texture("map-sprites");
@@ -66,6 +70,13 @@ void gameplay_update(scene_data_t *data)
 
 void gameplay_draw(scene_data_t *data)
 {
+    ClearBackground(BLACK);
+
+    gameplay_draw_map(data);
+}
+
+static void gameplay_draw_map(scene_data_t *data)
+{
     int camera_x, camera_y;
 
     Rectangle tile = {
@@ -79,41 +90,39 @@ void gameplay_draw(scene_data_t *data)
     };
 
     Vector2 tile_rotation_origin = {
-        .x = GAMEPLAY_TILE_SIZE / 2,
-        .y = GAMEPLAY_TILE_SIZE / 2,
+        .x = GAMEPLAY_TILE_SIZE / 2.0,
+        .y = GAMEPLAY_TILE_SIZE / 2.0,
     };
 
-    ClearBackground(BLACK);
-
     for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
-        tile.y = tile_rotation_origin.y;
-
         for (int y = 0; y < data->camera.height; y++) {
-            tile.x = tile_rotation_origin.x;
             camera_y = y + data->camera.y;
 
             for (int x = 0; x < data->camera.width; x++) {
                 camera_x = x + data->camera.x;
 
-                if (TILE_IS_EMPTY(data->map.tiles[layer][camera_y][camera_x])) {
-                    tile.x += tile.width;
+                if (TILE_IS_EMPTY(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
-                }
 
-                sprite.x = TILE_X(data->map.tiles[layer][y][x]);
+                // TODO: Maybe fix a little that appear when move the camera,
+                // some thin black lines around all tiles.
+                tile.x = tile_rotation_origin.x
+                    + (camera_x - data->camera.x) * tile.width;
+
+                tile.y = tile_rotation_origin.y
+                    + (camera_y - data->camera.y) * tile.height;
+
+                sprite.x = TILE_X(data->map.tiles[layer][camera_y][camera_x]);
                 sprite.x = sprite.x * sprite.width + 1 * sprite.x;
 
-                sprite.y = TILE_Y(data->map.tiles[layer][y][x]);
+                sprite.y = TILE_Y(data->map.tiles[layer][camera_y][camera_x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
-                    TILE_ROTATION(data->map.tiles[layer][y][x]), WHITE);
-
-                tile.x += tile.width;
+                    TILE_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
+                    WHITE);
             }
-
-            tile.y += tile.height;
         }
     }
 }
