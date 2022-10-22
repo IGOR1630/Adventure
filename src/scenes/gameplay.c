@@ -21,7 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "game.h"
 #include "scene.h"
-#include "world/map.h"
+#include "world/map/map.h"
 
 #ifdef PLATFORM_ANDROID
 #include "ui/virtual_joystick.h"
@@ -143,15 +143,15 @@ static void gameplay_draw_map(scene_data_t *data)
                 tile.y = tile_rotation_origin.y
                     + (camera_y - data->camera.y) * tile.height;
 
-                sprite.x = TILE_X(data->map.tiles[layer][camera_y][camera_x]);
+                sprite.x = TILE_GET_X(data->map.tiles[layer][camera_y][camera_x]);
                 sprite.x = sprite.x * sprite.width + 1 * sprite.x;
 
-                sprite.y = TILE_Y(data->map.tiles[layer][camera_y][camera_x]);
+                sprite.y = TILE_GET_Y(data->map.tiles[layer][camera_y][camera_x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
-                    TILE_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
+                    TILE_GET_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
                     WHITE);
             }
         }
