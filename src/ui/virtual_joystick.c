@@ -43,13 +43,21 @@ Vector2 virtual_joystick_update(virtual_joystick_t *joystick)
 {
     float displacement;
 
-    Vector2 direction;
+    Vector2 direction = { 0, 0 };
     Vector2 mouse = game_virtual_mouse();
 
     if (mouse.x < game_width() / 2) {
         if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
             direction.x = mouse.x -= joystick->centers[0].x;
             direction.y = mouse.y -= joystick->centers[0].y;
+
+            if (fabs(direction.x) > fabs(direction.y)) {
+                if (fabs(direction.y) < joystick->radius / 4)
+                    direction.y = 0;
+            } else {
+                if (fabs(direction.x) < joystick->radius / 4)
+                    direction.x = 0;
+            }
 
             displacement = sqrt(pow(mouse.x, 2) + pow(mouse.y, 2));
             if (displacement > joystick->radius) {
