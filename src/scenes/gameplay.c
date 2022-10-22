@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "scene.h"
 #include "world/map/map.h"
+#include "world/entity/player.h"
 
 #ifdef PLATFORM_ANDROID
 #include "ui/virtual_joystick.h"
@@ -31,6 +32,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 struct scene_data {
     map_t map;
+    player_t player;
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_t virtual_joystick;
@@ -40,13 +42,12 @@ struct scene_data {
     Texture spritesheet;
 };
 
-static void gameplay_draw_map(scene_data_t *data);
-
 scene_data_t *gameplay_init(void)
 {
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
     map_load(&data->map);
+    player_load(&data->player, data->map);
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
@@ -72,6 +73,8 @@ void gameplay_deinit(scene_data_t *data)
     map_save(&data->map);
     map_destroy(&data->map);
 
+    player_save(&data->player);
+
     free(data);
 }
 
@@ -93,22 +96,29 @@ void gameplay_update(scene_data_t *data)
     else if (IsKeyDown(KEY_A))
         direction.x = -1;
 #endif // PLATFORM_ANDROID
+
+    player_update(&data->player, direction);
+
+    // Update the game camera
+    data->camera.x = data->player.position.x + 1 - data->camera.width / 2;
+    data->camera.y = data->player.position.y + 1 - data->camera.height / 2;
+
+    if (data->camera.x < 0)
+        data->camera.x = 0;
+    else if (data->camera.x >= data->map.width - data->camera.width)
+        data->camera.x = data->map.width - data->camera.width;
+
+    if (data->camera.y < 0)
+        data->camera.y = 0;
+    else if (data->camera.y >= data->map.height - data->camera.height)
+        data->camera.y = data->map.height - data->camera.height;
 }
 
 void gameplay_draw(scene_data_t *data)
 {
-    ClearBackground(BLACK);
-
-    gameplay_draw_map(data);
-
-#ifdef PLATFORM_ANDROID
-    virtual_joystick_draw(&data->virtual_joystick);
-#endif // PLATFORM_ANDROID
-}
-
-static void gameplay_draw_map(scene_data_t *data)
-{
     int camera_x, camera_y;
+    int player_x, player_y;
+    int tree_alpha;
 
     Rectangle tile = {
         .width = GAMEPLAY_TILE_SIZE,
@@ -125,12 +135,39 @@ static void gameplay_draw_map(scene_data_t *data)
         .y = GAMEPLAY_TILE_SIZE / 2.0,
     };
 
+    ClearBackground(BLACK);
+
+    player_x = data->player.position.x;
+    player_y = data->player.position.y;
+
     for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
         for (int y = 0; y < data->camera.height; y++) {
             camera_y = y + data->camera.y;
 
             for (int x = 0; x < data->camera.width; x++) {
+                tree_alpha = 255;
                 camera_x = x + data->camera.x;
+
+                if (layer == 1) {
+                    // Draw the player
+                    if (player_x == camera_x && player_y == camera_y)
+                        player_draw(&data->player, &data->camera);
+
+                    // Check if the player is behind a tree
+                    if ((player_x == camera_x || player_x == camera_x - 1)
+                        && (player_y == camera_y || player_y - 1 == camera_y
+                            || player_y + 1 == camera_y)
+                        && TILE_IS_EQUAL(data->map.tiles[1][camera_y][camera_x],
+                            TILE_NEW(16, 10, 0)))
+                        tree_alpha = 200;
+                    else if ((player_x == camera_x || player_x == camera_x - 1)
+                        && (player_y == camera_y || player_y + 1 == camera_y
+                            || player_y + 2 == camera_y)
+                        && TILE_IS_EQUAL(data->map.tiles[1][camera_y][camera_x],
+                            TILE_NEW(16, 11, 0)))
+                        tree_alpha = 200;
+
+                }
 
                 if (TILE_IS_EMPTY(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
@@ -152,9 +189,13 @@ static void gameplay_draw_map(scene_data_t *data)
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
                     TILE_GET_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
-                    WHITE);
+                    (Color) { 255, 255, 255, tree_alpha });
             }
         }
     }
+
+#ifdef PLATFORM_ANDROID
+    virtual_joystick_draw(&data->virtual_joystick);
+#endif // PLATFORM_ANDROID
 }
 

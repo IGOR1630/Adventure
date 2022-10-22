@@ -120,6 +120,7 @@ endif
 SOURCES += $(wildcard $(GAME_SOURCE_PATH)/*.c) \
            $(wildcard $(GAME_SOURCE_PATH)/scenes/*.c) \
            $(wildcard $(GAME_SOURCE_PATH)/world/map/*.c) \
+           $(wildcard $(GAME_SOURCE_PATH)/world/entity/*.c) \
            $(wildcard $(GAME_SOURCE_PATH)/ui/*.c)
 
 PATH_SEP = /

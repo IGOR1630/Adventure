@@ -26,6 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "scene.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
+#include "world/entity/player.h"
 
 #define GENMAP_MAP_BASE_SIZE          350
 #define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
@@ -43,6 +44,7 @@ enum {
 
 struct scene_data {
     map_t map;
+    player_t player;
 
     int map_border_size;
 
@@ -69,9 +71,9 @@ scene_data_t *genmap_init(void)
 
     int map_width, map_height;
 
-
     srand(time(NULL));
     scene_data_t *data = malloc(sizeof(scene_data_t));
+
 
     if (!map_exists()) {
         if (width < height) {
@@ -83,6 +85,9 @@ scene_data_t *genmap_init(void)
         }
 
         map_create(&data->map, map_width, map_height);
+
+        if (!player_exists())
+            player_create(&data->player, data->map);
     } else {
         // Jump to the last stage that change to game scene
         data->generation_stage = 4;
@@ -106,6 +111,9 @@ void genmap_deinit(scene_data_t *data)
 {
     if (!map_exists())
         map_save(&data->map);
+
+    if (!player_exists())
+        player_save(&data->player);
 
     map_destroy(&data->map);
     free(data);
