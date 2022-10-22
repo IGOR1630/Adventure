@@ -24,7 +24,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "raylib.h"
 #include "game.h"
 #include "scene.h"
-#include "world/map.h"
+#include "world/map/map.h"
+#include "world/map/tile.h"
 
 #define GENMAP_MAP_BASE_SIZE          350
 #define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
@@ -190,15 +191,15 @@ void genmap_draw(scene_data_t *data)
                 if (TILE_IS_EMPTY(data->map.tiles[layer][y][x]))
                     break;
 
-                sprite.x = TILE_X(data->map.tiles[layer][y][x]);
+                sprite.x = TILE_GET_X(data->map.tiles[layer][y][x]);
                 sprite.x = sprite.x * sprite.width + 1 * sprite.x;
 
-                sprite.y = TILE_Y(data->map.tiles[layer][y][x]);
+                sprite.y = TILE_GET_Y(data->map.tiles[layer][y][x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
-                    TILE_ROTATION(data->map.tiles[layer][y][x]), WHITE);
+                    TILE_GET_ROTATION(data->map.tiles[layer][y][x]), WHITE);
             }
 
             tile.x += tile.width;
@@ -278,27 +279,27 @@ static void genmap_stage2(scene_data_t *data)
         for (int x = 0; x < data->map.width; x++) {
             if (data->map.tiles[0][y][x] == 0) {
                 neighbors = stage2_find_neighbors(&data->map, x, y);
-                next.tiles[0][y][x] = TILE(0, 0, (rand() % 4) * 90);
+                next.tiles[0][y][x] = TILE_NEW(0, 0, (rand() % 4) * 90);
 
                 // Sides
-                TEST_NEIGHBORS(0x02, 0x07, TILE(3, 0, 0));
-                TEST_NEIGHBORS(0x10, 0x94, TILE(3, 0, 90));
-                TEST_NEIGHBORS(0x40, 0xE0, TILE(3, 0, 180));
-                TEST_NEIGHBORS(0x08, 0x29, TILE(3, 0, 270));
+                TEST_NEIGHBORS(0x02, 0x07, TILE_NEW(3, 0, 0));
+                TEST_NEIGHBORS(0x10, 0x94, TILE_NEW(3, 0, 90));
+                TEST_NEIGHBORS(0x40, 0xE0, TILE_NEW(3, 0, 180));
+                TEST_NEIGHBORS(0x08, 0x29, TILE_NEW(3, 0, 270));
 
                 // Diagonals
-                TEST_NEIGHBORS(0x0B, 0x2F, TILE(2, 0, 0));
-                TEST_NEIGHBORS(0x16, 0x97, TILE(2, 0, 90));
-                TEST_NEIGHBORS(0xD0, 0xF4, TILE(2, 0, 180));
-                TEST_NEIGHBORS(0x68, 0xE9, TILE(2, 0, 270));
+                TEST_NEIGHBORS(0x0B, 0x2F, TILE_NEW(2, 0, 0));
+                TEST_NEIGHBORS(0x16, 0x97, TILE_NEW(2, 0, 90));
+                TEST_NEIGHBORS(0xD0, 0xF4, TILE_NEW(2, 0, 180));
+                TEST_NEIGHBORS(0x68, 0xE9, TILE_NEW(2, 0, 270));
 
                 // Corners
-                TEST_NEIGHBORS(0x80, 0x80, TILE(0, 1, 0));
-                TEST_NEIGHBORS(0x20, 0x20, TILE(0, 1, 90));
-                TEST_NEIGHBORS(0x04, 0x04, TILE(0, 1, 270));
-                TEST_NEIGHBORS(0x01, 0x01, TILE(0, 1, 180));
+                TEST_NEIGHBORS(0x80, 0x80, TILE_NEW(0, 1, 0));
+                TEST_NEIGHBORS(0x20, 0x20, TILE_NEW(0, 1, 90));
+                TEST_NEIGHBORS(0x04, 0x04, TILE_NEW(0, 1, 270));
+                TEST_NEIGHBORS(0x01, 0x01, TILE_NEW(0, 1, 180));
             } else {
-                next.tiles[0][y][x] = TILE(5, 0, (rand() % 4) * 90);
+                next.tiles[0][y][x] = TILE_NEW(5, 0, (rand() % 4) * 90);
             }
         }
     }
@@ -323,7 +324,7 @@ static void genmap_stage3(scene_data_t *data)
     if (data->generation_steps == 0) {
         for (int y = 0; y < data->map.height; y++)
             for (int x = 0; x < data->map.width; x++)
-                if (TILE_IS(data->map.tiles[0][y][x], 5, 0))
+                if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(5, 0, 0)))
                     floors_count++;
 
         data->generation_steps = floors_count * GENMAP_TREE_GENERATION_FACTOR;
@@ -338,14 +339,15 @@ static void genmap_stage3(scene_data_t *data)
             tree_x = rand() % data->map.width;
             tree_y = rand() % data->map.height;
 
-            if (TILE_IS(data->map.tiles[0][tree_y][tree_x], 5, 0)
+            if (TILE_IS_EQUAL(data->map.tiles[0][tree_y][tree_x],
+                    TILE_NEW(5, 0, 0))
                     && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 0][tree_x])
                     && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 1][tree_x]))
                 tree_generated = true;
         } while (!tree_generated);
 
-        data->map.tiles[1][tree_y - 0][tree_x] = TILE(16, 11, 0);
-        data->map.tiles[1][tree_y - 1][tree_x] = TILE(16, 10, 0);
+        data->map.tiles[1][tree_y - 0][tree_x] = TILE_NEW(16, 11, 0);
+        data->map.tiles[1][tree_y - 1][tree_x] = TILE_NEW(16, 10, 0);
     }
 
     data->generation_steps -= trees_to_generate;
