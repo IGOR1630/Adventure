@@ -172,8 +172,6 @@ void gameplay_draw(scene_data_t *data)
                 if (TILE_IS_EMPTY(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
 
-                // TODO: Maybe fix a little that appear when move the camera,
-                // some thin black lines around all tiles.
                 tile.x = tile_rotation_origin.x
                     + (camera_x - data->camera.x) * tile.width;
 
@@ -186,10 +184,18 @@ void gameplay_draw(scene_data_t *data)
                 sprite.y = TILE_GET_Y(data->map.tiles[layer][camera_y][camera_x]);
                 sprite.y = sprite.y * sprite.height + 1 * sprite.y;
 
+                // Fix little gaps that appear when move the camera, some thin
+                // black lines around all tiles.
+                tile.width++;
+                tile.height++;
+
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
                     TILE_GET_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
                     (Color) { 255, 255, 255, tree_alpha });
+
+                tile.width--;
+                tile.height--;
             }
         }
     }
