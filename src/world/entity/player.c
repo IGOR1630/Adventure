@@ -198,28 +198,28 @@ void player_update(player_t *player, Vector2 direction)
     // Check collisions
     direction.x = direction.x > 0 ? direction.x : 0;
     direction.y = direction.y > 0 ? direction.y : 0;
-
+/*
     if (TILE_IS_EQUAL(player->map.tiles[0][(int) player->position.y]
                 [(int) (pos.x + direction.x)], TILE_NEW(5, 0, 0))
             && TILE_IS_EQUAL(player->map.tiles[0][(int) player->position.y + 1]
                 [(int) (pos.x + direction.x)], TILE_NEW(5, 0, 0)))
-        player->position.x = pos.x;
+        */player->position.x = pos.x;
 
-    if (TILE_IS_EQUAL(player->map.tiles[0][(int) (pos.y + direction.y)]
+    /*if (TILE_IS_EQUAL(player->map.tiles[0][(int) (pos.y + direction.y)]
                 [(int) player->position.x], TILE_NEW(5, 0, 0))
             && TILE_IS_EQUAL(player->map.tiles[0][(int) (pos.y + direction.y)]
                 [(int) player->position.x + 1], TILE_NEW(5, 0, 0)))
-        player->position.y = pos.y;
+        */player->position.y = pos.y;
 }
 
 void player_draw(player_t *player, Rectangle *camera)
 {
     Rectangle tile = {
-        .x = (player->position.x - camera->x) * 64,
-        .y = (player->position.y - camera->y) * 64,
+        .x = (player->position.x - camera->x) * 32,
+        .y = (player->position.y - camera->y) * 32,
 
-        .width = 64,
-        .height = 64,
+        .width = 32,
+        .height = 32,
     };
 
     DrawRectangleRec(tile, RED);

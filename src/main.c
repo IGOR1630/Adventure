@@ -37,7 +37,7 @@ int main (int argc, char *argv[])
     }
 
     { // Resources
-        game_load_texture("map-sprites.png", "map-sprites");
+        game_load_texture("tiles.png", "tiles");
 
         game_load_texture("joystick_base.png", "joy-base");
         game_load_texture("joystick_top.png", "joy-top");

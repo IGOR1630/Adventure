@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ui/virtual_joystick.h"
 #endif // PLATFORM_ANDROID
 
-#define GAMEPLAY_TILE_SIZE 64.0
+#define GAMEPLAY_TILE_SIZE 32.0
 
 struct scene_data {
     map_t map;
@@ -63,7 +63,7 @@ scene_data_t *gameplay_init(void)
         .height = ceil((float) game_height() / GAMEPLAY_TILE_SIZE) + 1,
     };
 
-    data->spritesheet = game_get_texture("map-sprites");
+    data->spritesheet = game_get_texture("tiles");
 
     return data;
 }
@@ -87,9 +87,9 @@ void gameplay_update(scene_data_t *data)
     direction = virtual_joystick_update(&data->virtual_joystick);
 #else
     if (IsKeyDown(KEY_W))
-        direction.y = 1;
-    else if (IsKeyDown(KEY_S))
         direction.y = -1;
+    else if (IsKeyDown(KEY_S))
+        direction.y = 1;
 
     if (IsKeyDown(KEY_D))
         direction.x = 1;
@@ -179,10 +179,10 @@ void gameplay_draw(scene_data_t *data)
                     + (camera_y - data->camera.y) * tile.height;
 
                 sprite.x = TILE_GET_X(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.x = sprite.x * sprite.width + 1 * sprite.x;
+                sprite.x = sprite.x * sprite.width;
 
                 sprite.y = TILE_GET_Y(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.y = sprite.y * sprite.height + 1 * sprite.y;
+                sprite.y = sprite.y * sprite.height;
 
                 // Fix little gaps that appear when move the camera, some thin
                 // black lines around all tiles.
