@@ -179,10 +179,20 @@ void gameplay_draw(scene_data_t *data)
                     + (camera_y - data->camera.y) * tile.height;
 
                 sprite.x = TILE_GET_X(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.x = sprite.x * sprite.width;
+                sprite.x = sprite.x * fabs(sprite.width);
 
                 sprite.y = TILE_GET_Y(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.y = sprite.y * sprite.height;
+                sprite.y = sprite.y * fabs(sprite.height);
+
+                if (TILE_IS_FLIP_HORIZONTAL(data->map.tiles[layer][camera_y][camera_x]))
+                    sprite.width = -fabs(sprite.width);
+                else
+                    sprite.width = fabs(sprite.width);
+
+                if (TILE_IS_FLIP_VERTICAL(data->map.tiles[layer][camera_y][camera_x]))
+                    sprite.height = -fabs(sprite.height);
+                else
+                    sprite.height = fabs(sprite.height);
 
                 // Fix little gaps that appear when move the camera, some thin
                 // black lines around all tiles.

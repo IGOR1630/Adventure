@@ -200,10 +200,20 @@ void genmap_draw(scene_data_t *data)
                     break;
 
                 sprite.x = TILE_GET_X(data->map.tiles[layer][y][x]);
-                sprite.x = sprite.x * sprite.width;
+                sprite.x = sprite.x * fabs(sprite.width);
 
                 sprite.y = TILE_GET_Y(data->map.tiles[layer][y][x]);
-                sprite.y = sprite.y * sprite.height;
+                sprite.y = sprite.y * fabs(sprite.height);
+
+                if (TILE_IS_FLIP_HORIZONTAL(data->map.tiles[layer][y][x]))
+                    sprite.width = -fabs(sprite.width);
+                else
+                    sprite.width = fabs(sprite.width);
+
+                if (TILE_IS_FLIP_VERTICAL(data->map.tiles[layer][y][x]))
+                    sprite.height = -fabs(sprite.height);
+                else
+                    sprite.height = fabs(sprite.height);
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,

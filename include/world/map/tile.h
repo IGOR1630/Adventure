@@ -30,13 +30,25 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     (((tile) >> 12) & 0x000000FF)
 
 #define TILE_GET_ROTATION(tile)                                                \
-    (((tile) >> 20) & 0x000007FF)
+    (((tile) >> 20) & 0x000001FF)
 
 #define TILE_IS_EMPTY(tile)                                                    \
     (!((tile) & 1u << 31))
 
 #define TILE_IS_EQUAL(tile, other)                                             \
     (((tile) & 0x000FFFFF) == ((other) & 0x000FFFFF))
+
+#define TILE_FLIP_VERTICAL(tile)                                               \
+    ((tile) | 1u << 29)
+
+#define TILE_IS_FLIP_VERTICAL(tile)                                            \
+    (!!((tile) & 1u << 29))
+
+#define TILE_FLIP_HORIZONTAL(tile)                                             \
+    ((tile) | 1u << 30)
+
+#define TILE_IS_FLIP_HORIZONTAL(tile)                                          \
+    (!!((tile) & 1u << 30))
 
 typedef unsigned int tile_t;
 
