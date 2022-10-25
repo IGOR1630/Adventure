@@ -28,9 +28,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "world/map/tile.h"
 #include "world/entity/player.h"
 
-#define GENMAP_MAP_BASE_SIZE          100
+#define GENMAP_MAP_BASE_SIZE          250
 #define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
 #define GENMAP_TREE_GENERATION_FACTOR (5.0 / 100.0)
+
+#define GENMAP_FLOWER_SPAWN_RATE      (8.0 / 100.0)
+#define GENMAP_SINGLE_ROCK_SPAWN_RATE (0.5 / 100.0)
+#define GENMAP_ROCKS_SPAWN_RATE       (40.0 / 100.0)
+#define GENMAP_GRAVESTONE_SPAWN_RATE  (20.0 / 100.0)
 
 #define GENMAP_STEP_CHANGE_DELAY      (100.0 / 1000.0)
 
@@ -40,6 +45,7 @@ enum {
     GENMAP_STEPS_STAGE0 = 1,
     GENMAP_STEPS_STAGE1 = 10,
     GENMAP_STEPS_STAGE2 = 5,
+    GENMAP_STEPS_STAGE4 = 5,
 };
 
 struct scene_data {
@@ -59,10 +65,12 @@ static void genmap_stage0(scene_data_t *data);
 static void genmap_stage1(scene_data_t *data);
 static void genmap_stage2(scene_data_t *data);
 static void genmap_stage3(scene_data_t *data);
+static void genmap_stage4(scene_data_t *data);
 
 // Helper functions
 static int stage1_count_neighbors(map_t *map, int x, int y);
 static int stage2_find_neighbors(map_t *map, int x, int y);
+static int stage4_count_neighbors(map_t *map, int x, int y, tile_t tile);
 
 scene_data_t *genmap_init(void)
 {
@@ -137,6 +145,9 @@ void genmap_update(scene_data_t *data)
     case 3:
         genmap_stage3(data);
         break;
+    case 4:
+        genmap_stage4(data);
+        break;
     default:
         game_set_scene("gameplay");
         return;
@@ -191,6 +202,7 @@ void genmap_draw(scene_data_t *data)
                 draw_layers = 1;
                 break;
             case 3:
+            case 4:
                 draw_layers = 2;
                 break;
             }
@@ -430,6 +442,54 @@ static void genmap_stage3(scene_data_t *data)
         data->generation_steps++;
 }
 
+static void genmap_stage4(scene_data_t *data)
+{
+    int type;
+    tile_t tile;
+
+    if (data->generation_steps == 0)
+        data->generation_steps = GENMAP_STEPS_STAGE4;
+
+    for (int y = 0; y < data->map.height; y++) {
+        for (int x = 0; x < data->map.width; x++) {
+            tile = 0;
+
+            if (!TILE_IS_EMPTY(data->map.tiles[1][y][x]))
+                continue;
+
+            if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(11, 2, 0))) {
+                type = rand() % 2;
+
+                if (((double) rand() / RAND_MAX) <= GENMAP_FLOWER_SPAWN_RATE)
+                    tile = TILE_NEW(11, type, 0);
+                else if (((double) rand() / RAND_MAX) <= GENMAP_GRAVESTONE_SPAWN_RATE
+                        && (stage4_count_neighbors(&data->map, x, y,
+                                TILE_NEW(11, 0, 0)) > 2
+                            || stage4_count_neighbors(&data->map, x, y,
+                                TILE_NEW(11, 1, 0)) > 3 ))
+                    tile = !stage4_count_neighbors(&data->map, x, y,
+                        TILE_NEW(1 - type, 2, 0)) ? TILE_NEW(type, 2, 0) : 0;
+            } else if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(9, 1, 0))) {
+                type = rand() % 2;
+
+                if (((double) rand() / RAND_MAX) <= GENMAP_SINGLE_ROCK_SPAWN_RATE)
+                    tile = TILE_NEW(type + 10, type + 3, 0);
+                else if (((double) rand() / RAND_MAX) <= GENMAP_ROCKS_SPAWN_RATE
+                        && (stage4_count_neighbors(&data->map, x, y,
+                                TILE_NEW(10, 3, 0))
+                            || stage4_count_neighbors(&data->map, x, y,
+                                TILE_NEW(11, 4, 0))))
+                    tile = TILE_NEW(11 - type, 3 + type, 0);
+            }
+
+            if (tile != 0 && rand() % 2)
+                tile = TILE_FLIP_HORIZONTAL(tile);
+
+            data->map.tiles[1][y][x] = tile;
+        }
+    }
+}
+
 static int stage1_count_neighbors(map_t *map, int x, int y)
 {
     int next_x, next_y;
@@ -471,6 +531,28 @@ static int stage2_find_neighbors(map_t *map, int x, int y)
                 neighbors |= 1 << bit;
 
             bit++;
+        }
+    }
+
+    return neighbors;
+}
+
+static int stage4_count_neighbors(map_t *map, int x, int y, tile_t tile)
+{
+    int next_x, next_y;
+    int neighbors = 0;
+
+    for (int offset_y = -1; offset_y <= 1; offset_y++) {
+        next_y = y + offset_y;
+
+        for (int offset_x = -1; offset_x <= 1; offset_x++) {
+            next_x = x + offset_x;
+
+            if (next_x < 0 || next_y < 0 || next_x >= map->width
+                    || next_y >= map->height || (next_x == x && next_y == y))
+                continue;
+            else if (TILE_IS_EQUAL(map->tiles[1][next_y][next_x], tile))
+                neighbors++;
         }
     }
 
