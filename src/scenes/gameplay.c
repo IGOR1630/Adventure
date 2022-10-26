@@ -22,13 +22,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "scene.h"
 #include "world/map/map.h"
+#include "world/map/tile.h"
 #include "world/entity/player.h"
 
 #ifdef PLATFORM_ANDROID
 #include "ui/virtual_joystick.h"
 #endif // PLATFORM_ANDROID
 
-#define GAMEPLAY_TILE_SIZE 32.0
 
 struct scene_data {
     map_t map;
@@ -59,8 +59,8 @@ scene_data_t *gameplay_init(void)
 
         // +1 because it's needed to draw one line/column more to fill gaps when
         // drawing a camera that hasn't a integer value.
-        .width = ceil((float) game_width() / GAMEPLAY_TILE_SIZE) + 1,
-        .height = ceil((float) game_height() / GAMEPLAY_TILE_SIZE) + 1,
+        .width = ceil((float) game_width() / TILE_DRAW_SIZE) + 1,
+        .height = ceil((float) game_height() / TILE_DRAW_SIZE) + 1,
     };
 
     data->spritesheet = game_get_texture("tiles");
@@ -112,17 +112,24 @@ void gameplay_update(scene_data_t *data)
         data->camera.y = 0;
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
+
+    for (int i = 0; i < data->entities_count; i++)
+        entity_update(data->entities[i]);
+
+
+    if (data->entities_count == 0 && (direction.x != 0 || direction.y != 0))
+        data->entities[data->entities_count++] =
+            slime_create(data->camera, direction);
 }
 
 void gameplay_draw(scene_data_t *data)
 {
     int camera_x, camera_y;
     int player_x, player_y;
-    int tree_alpha;
 
     Rectangle tile = {
-        .width = GAMEPLAY_TILE_SIZE,
-        .height = GAMEPLAY_TILE_SIZE,
+        .width = TILE_DRAW_SIZE,
+        .height = TILE_DRAW_SIZE,
     };
 
     Rectangle sprite = {
@@ -131,8 +138,8 @@ void gameplay_draw(scene_data_t *data)
     };
 
     Vector2 tile_rotation_origin = {
-        .x = GAMEPLAY_TILE_SIZE / 2.0,
-        .y = GAMEPLAY_TILE_SIZE / 2.0,
+        .x = TILE_DRAW_SIZE / 2.0,
+        .y = TILE_DRAW_SIZE / 2.0,
     };
 
     ClearBackground(BLACK);
@@ -152,24 +159,9 @@ void gameplay_draw(scene_data_t *data)
                     // Draw the player
                     if (player_x == camera_x && player_y == camera_y)
                         player_draw(&data->player, &data->camera);
-
-                    // Check if the player is behind a tree
-                    if ((player_x == camera_x || player_x == camera_x - 1)
-                        && (player_y == camera_y || player_y - 1 == camera_y
-                            || player_y + 1 == camera_y)
-                        && TILE_IS_EQUAL(data->map.tiles[1][camera_y][camera_x],
-                            TILE_NEW(16, 10, 0)))
-                        tree_alpha = 200;
-                    else if ((player_x == camera_x || player_x == camera_x - 1)
-                        && (player_y == camera_y || player_y + 1 == camera_y
-                            || player_y + 2 == camera_y)
-                        && TILE_IS_EQUAL(data->map.tiles[1][camera_y][camera_x],
-                            TILE_NEW(16, 11, 0)))
-                        tree_alpha = 200;
-
                 }
 
-                if (TILE_IS_EMPTY(data->map.tiles[layer][camera_y][camera_x]))
+                if (tile_empty(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
 
                 tile.x = tile_rotation_origin.x
@@ -178,18 +170,18 @@ void gameplay_draw(scene_data_t *data)
                 tile.y = tile_rotation_origin.y
                     + (camera_y - data->camera.y) * tile.height;
 
-                sprite.x = TILE_GET_X(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.x = sprite.x * fabs(sprite.width);
+                sprite.x = tile_x(data->map.tiles[layer][camera_y][camera_x])
+                    * fabs(sprite.width);
 
-                sprite.y = TILE_GET_Y(data->map.tiles[layer][camera_y][camera_x]);
-                sprite.y = sprite.y * fabs(sprite.height);
+                sprite.y = tile_y(data->map.tiles[layer][camera_y][camera_x])
+                    * fabs(sprite.height);
 
-                if (TILE_IS_FLIP_HORIZONTAL(data->map.tiles[layer][camera_y][camera_x]))
+                if (tile_flipped(data->map.tiles[layer][camera_y][camera_x], 0))
                     sprite.width = -fabs(sprite.width);
                 else
                     sprite.width = fabs(sprite.width);
 
-                if (TILE_IS_FLIP_VERTICAL(data->map.tiles[layer][camera_y][camera_x]))
+                if (tile_flipped(data->map.tiles[layer][camera_y][camera_x], 1))
                     sprite.height = -fabs(sprite.height);
                 else
                     sprite.height = fabs(sprite.height);
@@ -201,7 +193,7 @@ void gameplay_draw(scene_data_t *data)
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
-                    TILE_GET_ROTATION(data->map.tiles[layer][camera_y][camera_x]),
+                    tile_rotation(data->map.tiles[layer][camera_y][camera_x]),
                     (Color) { 255, 255, 255, tree_alpha });
 
                 tile.width--;

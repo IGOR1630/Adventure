@@ -28,7 +28,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "world/map/tile.h"
 #include "world/entity/player.h"
 
-#define GENMAP_MAP_BASE_SIZE          250
+#define GENMAP_MAP_BASE_SIZE          300
 #define GENMAP_MAP_LAND_SPAWN_RATE    (55.0 / 100.0)
 #define GENMAP_TREE_GENERATION_FACTOR (5.0 / 100.0)
 
@@ -201,35 +201,34 @@ void genmap_draw(scene_data_t *data)
             case 2:
                 draw_layers = 1;
                 break;
-            case 3:
-            case 4:
+            case 3: case 4:
                 draw_layers = 2;
                 break;
             }
 
             for (int layer = 0; layer < draw_layers; layer++) {
-                if (TILE_IS_EMPTY(data->map.tiles[layer][y][x]))
+                if (tile_empty(data->map.tiles[layer][y][x]))
                     break;
 
-                sprite.x = TILE_GET_X(data->map.tiles[layer][y][x]);
-                sprite.x = sprite.x * fabs(sprite.width);
+                sprite.x = tile_x(data->map.tiles[layer][y][x])
+                    * fabs(sprite.width);
 
-                sprite.y = TILE_GET_Y(data->map.tiles[layer][y][x]);
-                sprite.y = sprite.y * fabs(sprite.height);
+                sprite.y = tile_y(data->map.tiles[layer][y][x])
+                    * fabs(sprite.height);
 
-                if (TILE_IS_FLIP_HORIZONTAL(data->map.tiles[layer][y][x]))
+                if (tile_flipped(data->map.tiles[layer][y][x], 0))
                     sprite.width = -fabs(sprite.width);
                 else
                     sprite.width = fabs(sprite.width);
 
-                if (TILE_IS_FLIP_VERTICAL(data->map.tiles[layer][y][x]))
+                if (tile_flipped(data->map.tiles[layer][y][x], 1))
                     sprite.height = -fabs(sprite.height);
                 else
                     sprite.height = fabs(sprite.height);
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
-                    TILE_GET_ROTATION(data->map.tiles[layer][y][x]), WHITE);
+                    tile_rotation(data->map.tiles[layer][y][x]), WHITE);
             }
 
             tile.x += tile.width;
@@ -260,7 +259,6 @@ static void genmap_stage1(scene_data_t *data)
 {
     int neighbors;
     map_t next;
-
 
     if (data->generation_steps == 0)
         data->generation_steps = GENMAP_STEPS_STAGE1;
@@ -309,82 +307,82 @@ static void genmap_stage2(scene_data_t *data)
         for (int x = 0; x < data->map.width; x++) {
             if (data->map.tiles[0][y][x] == 0) {
                 neighbors = stage2_find_neighbors(&data->map, x, y);
-                next.tiles[0][y][x] = TILE_NEW(9, 1, 0);
+                next.tiles[0][y][x] = tile_new(9, 1);
 
                 // Sides
-                TEST_NEIGHBORS(0x02, 0x07, TILE_NEW(9, 0, 0));
-                TEST_NEIGHBORS(0x10, 0x94, TILE_NEW(10, 1, 0));
-                TEST_NEIGHBORS(0x40, 0xE0, TILE_NEW(9, 2, 0));
-                TEST_NEIGHBORS(0x08, 0x29, TILE_NEW(8, 1, 0));
+                TEST_NEIGHBORS(0x02, 0x07, tile_new(9, 0));
+                TEST_NEIGHBORS(0x10, 0x94, tile_new(10, 1));
+                TEST_NEIGHBORS(0x40, 0xE0, tile_new(9, 2));
+                TEST_NEIGHBORS(0x08, 0x29, tile_new(8, 1));
 
                 // Sides double
-                TEST_NEIGHBORS(0x42, 0xE7, TILE_NEW(4, 4, 0));
-                TEST_NEIGHBORS(0x18, 0xBD, TILE_NEW(5, 4, 0));
+                TEST_NEIGHBORS(0x42, 0xE7, tile_new(4, 4));
+                TEST_NEIGHBORS(0x18, 0xBD, tile_new(5, 4));
 
                 // Sides all
-                TEST_NEIGHBORS(0x59, 0xFF, TILE_NEW(6, 4, 0));
+                TEST_NEIGHBORS(0x59, 0xFF, tile_new(6, 4));
 
                 // Sides triple
-                TEST_NEIGHBORS(0x1A, 0xBF, TILE_NEW(6, 0, 0));
-                TEST_NEIGHBORS(0x58, 0xFD, TILE_NEW(7, 0, 0));
-                TEST_NEIGHBORS(0x4A, 0xEF, TILE_NEW(6, 1, 0));
-                TEST_NEIGHBORS(0x52, 0xF7, TILE_NEW(7, 1, 0));
+                TEST_NEIGHBORS(0x1A, 0xBF, tile_new(6, 0));
+                TEST_NEIGHBORS(0x58, 0xFD, tile_new(7, 0));
+                TEST_NEIGHBORS(0x4A, 0xEF, tile_new(6, 1));
+                TEST_NEIGHBORS(0x52, 0xF7, tile_new(7, 1));
 
                 // Sides corner
-                TEST_NEIGHBORS(0x22, 0x27, TILE_NEW(0, 1, 0));
-                TEST_NEIGHBORS(0x82, 0x87, TILE_NEW(1, 1, 0));
-                TEST_NEIGHBORS(0x41, 0xE1, TILE_NEW(0, 0, 0));
-                TEST_NEIGHBORS(0x44, 0xE4, TILE_NEW(1, 0, 0));
+                TEST_NEIGHBORS(0x22, 0x27, tile_new(0, 1));
+                TEST_NEIGHBORS(0x82, 0x87, tile_new(1, 1));
+                TEST_NEIGHBORS(0x41, 0xE1, tile_new(0, 0));
+                TEST_NEIGHBORS(0x44, 0xE4, tile_new(1, 0));
 
-                TEST_NEIGHBORS(0x0C, 0x2D, TILE_NEW(3, 1, 0));
-                TEST_NEIGHBORS(0x88, 0xA9, TILE_NEW(3, 0, 0));
-                TEST_NEIGHBORS(0x11, 0x95, TILE_NEW(2, 1, 0));
-                TEST_NEIGHBORS(0x30, 0xB4, TILE_NEW(2, 0, 0));
+                TEST_NEIGHBORS(0x0C, 0x2D, tile_new(3, 1));
+                TEST_NEIGHBORS(0x88, 0xA9, tile_new(3, 0));
+                TEST_NEIGHBORS(0x11, 0x95, tile_new(2, 1));
+                TEST_NEIGHBORS(0x30, 0xB4, tile_new(2, 0));
 
                 // Sides double corner
-                TEST_NEIGHBORS(0xA2, 0xA7, TILE_NEW(5, 3, 0));
-                TEST_NEIGHBORS(0x31, 0xB5, TILE_NEW(4, 2, 0));
-                TEST_NEIGHBORS(0x45, 0xE5, TILE_NEW(4, 3, 0));
-                TEST_NEIGHBORS(0x8C, 0xAD, TILE_NEW(5, 2, 0));
+                TEST_NEIGHBORS(0xA2, 0xA7, tile_new(5, 3));
+                TEST_NEIGHBORS(0x31, 0xB5, tile_new(4, 2));
+                TEST_NEIGHBORS(0x45, 0xE5, tile_new(4, 3));
+                TEST_NEIGHBORS(0x8C, 0xAD, tile_new(5, 2));
 
                 // Diagonals
-                TEST_NEIGHBORS(0x0A, 0x2F, TILE_NEW(8, 0, 0));
-                TEST_NEIGHBORS(0x12, 0x97, TILE_NEW(10, 0, 0));
-                TEST_NEIGHBORS(0x50, 0xF4, TILE_NEW(10, 2, 0));
-                TEST_NEIGHBORS(0x48, 0xE9, TILE_NEW(8, 2, 0));
+                TEST_NEIGHBORS(0x0A, 0x2F, tile_new(8, 0));
+                TEST_NEIGHBORS(0x12, 0x97, tile_new(10, 0));
+                TEST_NEIGHBORS(0x50, 0xF4, tile_new(10, 2));
+                TEST_NEIGHBORS(0x48, 0xE9, tile_new(8, 2));
 
                 // Diagonals corner
-                TEST_NEIGHBORS(0x8A, 0xAF, TILE_NEW(6, 2, 0));
-                TEST_NEIGHBORS(0x32, 0xB7, TILE_NEW(7, 2, 0));
-                TEST_NEIGHBORS(0x51, 0xF5, TILE_NEW(7, 3, 0));
-                TEST_NEIGHBORS(0x4C, 0xED, TILE_NEW(6, 3, 0));
+                TEST_NEIGHBORS(0x8A, 0xAF, tile_new(6, 2));
+                TEST_NEIGHBORS(0x32, 0xB7, tile_new(7, 2));
+                TEST_NEIGHBORS(0x51, 0xF5, tile_new(7, 3));
+                TEST_NEIGHBORS(0x4C, 0xED, tile_new(6, 3));
 
                 // Corners
-                TEST_NEIGHBORS(0x80, 0x80, TILE_NEW(8, 3, 0));
-                TEST_NEIGHBORS(0x20, 0x20, TILE_NEW(9, 3, 0));
-                TEST_NEIGHBORS(0x04, 0x04, TILE_NEW(8, 4, 0));
-                TEST_NEIGHBORS(0x01, 0x01, TILE_NEW(9, 4, 0));
+                TEST_NEIGHBORS(0x80, 0x80, tile_new(8, 3));
+                TEST_NEIGHBORS(0x20, 0x20, tile_new(9, 3));
+                TEST_NEIGHBORS(0x04, 0x04, tile_new(8, 4));
+                TEST_NEIGHBORS(0x01, 0x01, tile_new(9, 4));
 
                 // Corners double
-                TEST_NEIGHBORS(0x84, 0x84, TILE_NEW(3, 3, 0));
-                TEST_NEIGHBORS(0x21, 0x21, TILE_NEW(2, 3, 0));
-                TEST_NEIGHBORS(0x05, 0x05, TILE_NEW(3, 4, 0));
-                TEST_NEIGHBORS(0xA0, 0xA0, TILE_NEW(2, 4, 0));
+                TEST_NEIGHBORS(0x84, 0x84, tile_new(3, 3));
+                TEST_NEIGHBORS(0x21, 0x21, tile_new(2, 3));
+                TEST_NEIGHBORS(0x05, 0x05, tile_new(3, 4));
+                TEST_NEIGHBORS(0xA0, 0xA0, tile_new(2, 4));
 
                 // Corners opposite double
-                TEST_NEIGHBORS(0x81, 0x81, TILE_NEW(3, 2, 0));
-                TEST_NEIGHBORS(0x24, 0x24, TILE_NEW(2, 2, 0));
+                TEST_NEIGHBORS(0x81, 0x81, tile_new(3, 2));
+                TEST_NEIGHBORS(0x24, 0x24, tile_new(2, 2));
 
                 // Corners triple
-                TEST_NEIGHBORS(0x85, 0x85, TILE_NEW(5, 0, 0));
-                TEST_NEIGHBORS(0x25, 0x25, TILE_NEW(4, 0, 0));
-                TEST_NEIGHBORS(0xA4, 0xA4, TILE_NEW(5, 1, 0));
-                TEST_NEIGHBORS(0xA1, 0xA1, TILE_NEW(4, 1, 0));
+                TEST_NEIGHBORS(0x85, 0x85, tile_new(5, 0));
+                TEST_NEIGHBORS(0x25, 0x25, tile_new(4, 0));
+                TEST_NEIGHBORS(0xA4, 0xA4, tile_new(5, 1));
+                TEST_NEIGHBORS(0xA1, 0xA1, tile_new(4, 1));
 
                 // Corners all
-                TEST_NEIGHBORS(0xA5, 0xA5, TILE_NEW(7, 4, 0));
+                TEST_NEIGHBORS(0xA5, 0xA5, tile_new(7, 4));
             } else {
-                next.tiles[0][y][x] = TILE_NEW(11, 2, 0);
+                next.tiles[0][y][x] = tile_new(11, 2);
             }
         }
     }
@@ -410,7 +408,7 @@ static void genmap_stage3(scene_data_t *data)
     if (data->generation_steps == 0) {
         for (int y = 0; y < data->map.height; y++)
             for (int x = 0; x < data->map.width; x++)
-                if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(11, 2, 0)))
+                if (tile_equal(data->map.tiles[0][y][x], tile_new(11, 2)))
                     floors_count++;
 
         data->generation_steps = floors_count * GENMAP_TREE_GENERATION_FACTOR;
@@ -425,16 +423,15 @@ static void genmap_stage3(scene_data_t *data)
             tree_x = rand() % data->map.width;
             tree_y = rand() % data->map.height;
 
-            if (TILE_IS_EQUAL(data->map.tiles[0][tree_y][tree_x],
-                    TILE_NEW(11, 2, 0))
-                    && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 0][tree_x])
-                    && TILE_IS_EMPTY(data->map.tiles[1][tree_y - 1][tree_x]))
+            if (tile_equal(data->map.tiles[0][tree_y][tree_x], tile_new(11, 2))
+                    && tile_empty(data->map.tiles[1][tree_y - 0][tree_x])
+                    && tile_empty(data->map.tiles[1][tree_y - 1][tree_x]))
                 tree_generated = true;
         } while (!tree_generated);
 
         tree_type = rand() % 2;
-        data->map.tiles[1][tree_y - 0][tree_x] = TILE_NEW(tree_type, 4, 0);
-        data->map.tiles[1][tree_y - 1][tree_x] = TILE_NEW(tree_type, 3, 0);
+        data->map.tiles[1][tree_y - 0][tree_x] = tile_new(tree_type, 4);
+        data->map.tiles[1][tree_y - 1][tree_x] = tile_new(tree_type, 3);
     }
 
     data->generation_steps -= trees_to_generate;
@@ -454,36 +451,36 @@ static void genmap_stage4(scene_data_t *data)
         for (int x = 0; x < data->map.width; x++) {
             tile = 0;
 
-            if (!TILE_IS_EMPTY(data->map.tiles[1][y][x]))
+            if (!tile_empty(data->map.tiles[1][y][x]))
                 continue;
 
-            if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(11, 2, 0))) {
+            if (tile_equal(data->map.tiles[0][y][x], tile_new(11, 2))) {
                 type = rand() % 2;
 
                 if (((double) rand() / RAND_MAX) <= GENMAP_FLOWER_SPAWN_RATE)
-                    tile = TILE_NEW(11, type, 0);
+                    tile = tile_new(11, type);
                 else if (((double) rand() / RAND_MAX) <= GENMAP_GRAVESTONE_SPAWN_RATE
                         && (stage4_count_neighbors(&data->map, x, y,
-                                TILE_NEW(11, 0, 0)) > 2
+                                tile_new(11, 0)) > 2
                             || stage4_count_neighbors(&data->map, x, y,
-                                TILE_NEW(11, 1, 0)) > 3 ))
+                                tile_new(11, 1)) > 3))
                     tile = !stage4_count_neighbors(&data->map, x, y,
-                        TILE_NEW(1 - type, 2, 0)) ? TILE_NEW(type, 2, 0) : 0;
-            } else if (TILE_IS_EQUAL(data->map.tiles[0][y][x], TILE_NEW(9, 1, 0))) {
+                        tile_new(1 - type, 2)) ? tile_new(type, 2) : 0;
+            } else if (tile_equal(data->map.tiles[0][y][x], tile_new(9, 1))) {
                 type = rand() % 2;
 
                 if (((double) rand() / RAND_MAX) <= GENMAP_SINGLE_ROCK_SPAWN_RATE)
-                    tile = TILE_NEW(type + 10, type + 3, 0);
+                    tile = tile_new(type + 10, type + 3);
                 else if (((double) rand() / RAND_MAX) <= GENMAP_ROCKS_SPAWN_RATE
                         && (stage4_count_neighbors(&data->map, x, y,
-                                TILE_NEW(10, 3, 0))
+                                tile_new(10, 3))
                             || stage4_count_neighbors(&data->map, x, y,
-                                TILE_NEW(11, 4, 0))))
-                    tile = TILE_NEW(11 - type, 3 + type, 0);
+                                tile_new(11, 4))))
+                    tile = tile_new(11 - type, 3 + type);
             }
 
-            if (tile != 0 && rand() % 2)
-                tile = TILE_FLIP_HORIZONTAL(tile);
+            if (!tile_empty(tile) && rand() % 2)
+                tile = tile_flip(tile, 0);
 
             data->map.tiles[1][y][x] = tile;
         }
@@ -551,7 +548,7 @@ static int stage4_count_neighbors(map_t *map, int x, int y, tile_t tile)
             if (next_x < 0 || next_y < 0 || next_x >= map->width
                     || next_y >= map->height || (next_x == x && next_y == y))
                 continue;
-            else if (TILE_IS_EQUAL(map->tiles[1][next_y][next_x], tile))
+            else if (tile_equal(map->tiles[1][next_y][next_x], tile))
                 neighbors++;
         }
     }

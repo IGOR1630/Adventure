@@ -20,35 +20,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TILE_H
 #define TILE_H
 
-#define TILE_NEW(x, y, rotation)                                               \
-    (1u << 31 | (rotation) << 20 | (y) << 12 | (x))
+#define TILE_DRAW_SIZE 32.0
 
-#define TILE_GET_X(tile)                                                       \
-    (((tile) >> 0) & 0x00000FFF)
+#define tile_new(x, y) (1u << 31 | (y) << 8 | (x))
 
-#define TILE_GET_Y(tile)                                                       \
-    (((tile) >> 12) & 0x000000FF)
+#define tile_x(tile) ((tile) & 0x000000FF)
+#define tile_y(tile) (((tile) >> 8) & 0x000000FF)
 
-#define TILE_GET_ROTATION(tile)                                                \
-    (((tile) >> 20) & 0x000001FF)
+#define tile_rotate(tile, rotation) ((tile) | (rotation) << 16)
+#define tile_rotation(tile) (((tile) >> 16) & 0x000001FF)
 
-#define TILE_IS_EMPTY(tile)                                                    \
-    (!((tile) & 1u << 31))
+#define tile_flip(tile, axis) ((tile) | 1u << ((axis) + 29))
+#define tile_flipped(tile, axis) (((tile) >> (((axis) + 29))) & 0x1)
 
-#define TILE_IS_EQUAL(tile, other)                                             \
-    (((tile) & 0x000FFFFF) == ((other) & 0x000FFFFF))
-
-#define TILE_FLIP_VERTICAL(tile)                                               \
-    ((tile) | 1u << 29)
-
-#define TILE_IS_FLIP_VERTICAL(tile)                                            \
-    (!!((tile) & 1u << 29))
-
-#define TILE_FLIP_HORIZONTAL(tile)                                             \
-    ((tile) | 1u << 30)
-
-#define TILE_IS_FLIP_HORIZONTAL(tile)                                          \
-    (!!((tile) & 1u << 30))
+#define tile_equal(tile, other) (((tile) & 0x0000FFFF) == ((other) & 0x0000FFFF))
+#define tile_empty(tile) (!(((tile) >> 31) & 0x1))
 
 typedef unsigned int tile_t;
 

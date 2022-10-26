@@ -32,7 +32,7 @@ void map_create(map_t *map, int width, int height)
         map->tiles[layer] = malloc(sizeof(tile_t *) * height);
 
         for (int y = 0; y < height; y++)
-            map->tiles[layer][y] = malloc(sizeof(tile_t) * width);
+            map->tiles[layer][y] = calloc(width, sizeof(tile_t));
     }
 
     map->width  = width;
