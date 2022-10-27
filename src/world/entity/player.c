@@ -53,13 +53,10 @@ bool player_load(player_t *player, map_t map)
     if ((file = player_goto_section()) == NULL)
         return false;
 
-    player->map = map;
-
     while ((c = fgetc(file)) != EOF) {
         if (c == '<') {
             fscanf(file, "%20s", token);
 
-            printf("%s\n", token);
             if (strcmp(token, "Player") == 0) {
                 open_player_section = true;
                 player_section_found = true;
@@ -81,7 +78,6 @@ bool player_load(player_t *player, map_t map)
 
             fgetc(file);
 
-            printf("%s\n", token);
             if (strcmp(token, "Position") == 0)
                 fread(&player->position, sizeof(Vector2), 1, file);
         }

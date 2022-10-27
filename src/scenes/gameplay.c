@@ -112,14 +112,6 @@ void gameplay_update(scene_data_t *data)
         data->camera.y = 0;
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
-
-    for (int i = 0; i < data->entities_count; i++)
-        entity_update(data->entities[i]);
-
-
-    if (data->entities_count == 0 && (direction.x != 0 || direction.y != 0))
-        data->entities[data->entities_count++] =
-            slime_create(data->camera, direction);
 }
 
 void gameplay_draw(scene_data_t *data)
@@ -152,7 +144,6 @@ void gameplay_draw(scene_data_t *data)
             camera_y = y + data->camera.y;
 
             for (int x = 0; x < data->camera.width; x++) {
-                tree_alpha = 255;
                 camera_x = x + data->camera.x;
 
                 if (layer == 1) {
@@ -194,7 +185,7 @@ void gameplay_draw(scene_data_t *data)
                 DrawTexturePro(data->spritesheet, sprite, tile,
                     tile_rotation_origin,
                     tile_rotation(data->map.tiles[layer][camera_y][camera_x]),
-                    (Color) { 255, 255, 255, tree_alpha });
+                    WHITE);
 
                 tile.width--;
                 tile.height--;
