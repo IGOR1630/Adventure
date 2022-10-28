@@ -39,7 +39,7 @@ void map_create(map_t *map, int width, int height)
     map->height = height;
 }
 
-bool map_load(map_t *map)
+bool map_load(map_t *map, int what_load)
 {
     int c;
 
@@ -63,17 +63,22 @@ bool map_load(map_t *map)
                 open_map_section = true;
                 map_section_found = true;
 
-                fscanf(file, "%u %u", &map->width, &map->height);
+                if (what_load == MAP_LOAD_DIMENSIONS)
+                    fscanf(file, "%u %u", &map->width, &map->height);
             } else if (open_map_section && strcmp(token, "Layer") == 0) {
                 fscanf(file, "%u", &layer);
 
                 // Discard the newline character preceded by layer declaration
                 fgetc(file);
 
-                map->tiles[layer] = malloc(sizeof(tile_t *) * map->height);
-                for (int y = 0; y < map->height; y++) {
-                    map->tiles[layer][y] = malloc(sizeof(tile_t) * map->width);
-                    fread(map->tiles[layer][y], sizeof(tile_t), map->width, file);
+                if ((what_load == MAP_LOAD_LAYER_0 && layer == 0)
+                        || (what_load == MAP_LOAD_LAYER_1 && layer == 1)) {
+                    map->tiles[layer] = malloc(sizeof(tile_t *) * map->height);
+
+                    for (int y = 0; y < map->height; y++) {
+                        map->tiles[layer][y] = malloc(sizeof(tile_t) * map->width);
+                        fread(map->tiles[layer][y], sizeof(tile_t), map->width, file);
+                    }
                 }
             } else if (open_map_section) {
                 break;

@@ -30,6 +30,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "ui/virtual_joystick.h"
 #endif // PLATFORM_ANDROID
 
+#define GAMEPLAY_LOAD_STAGES 4
+
 struct scene_data {
     map_t map;
     player_t player;
@@ -40,16 +42,21 @@ struct scene_data {
 
     Rectangle camera;
     Texture spritesheet;
+
+    int loading_stage;
 };
+
+static void update_loading(scene_data_t *data);
+static void update_game(scene_data_t *data);
+
+static void draw_loading(scene_data_t *data);
+static void draw_game(scene_data_t *data);
 
 scene_data_t *gameplay_init(void)
 {
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
-    map_load(&data->map);
-
-    player_create(&data->player, &data->map);
-    player_load(&data->player);
+    data->loading_stage = 0;
 
     data->camera = (Rectangle) {
         .x = 0,
@@ -85,6 +92,50 @@ void gameplay_deinit(scene_data_t *data)
 
 
 void gameplay_update(scene_data_t *data)
+{
+    if (data->loading_stage < GAMEPLAY_LOAD_STAGES)
+        update_loading(data);
+    else
+        update_game(data);
+}
+
+void gameplay_draw(scene_data_t *data)
+{
+    if (data->loading_stage < GAMEPLAY_LOAD_STAGES)
+        draw_loading(data);
+    else
+        draw_game(data);
+}
+
+static void update_loading(scene_data_t *data)
+{
+    switch (data->loading_stage) {
+    // Load map dimensions
+    case 0:
+        map_load(&data->map, MAP_LOAD_DIMENSIONS);
+        break;
+
+    // Load map layer 0
+    case 1:
+        map_load(&data->map, MAP_LOAD_LAYER_0);
+        break;
+
+    // Load map layer 1
+    case 2:
+        map_load(&data->map, MAP_LOAD_LAYER_1);
+        break;
+
+    // Load player state
+    case 3:
+        player_create(&data->player, &data->map);
+        player_load(&data->player);
+        break;
+    }
+
+    data->loading_stage++;
+}
+
+static void update_game(scene_data_t *data)
 {
     Vector2 direction = { 0, 0 };
 
@@ -122,7 +173,28 @@ void gameplay_update(scene_data_t *data)
         data->camera.y = data->map.height - data->camera.height;
 }
 
-void gameplay_draw(scene_data_t *data)
+static void draw_loading(scene_data_t *data)
+{
+    switch (data->loading_stage) {
+    // Draw loading map dimensions
+    case 0:
+        break;
+
+    // Draw loading map layer 0
+    case 1:
+        break;
+
+    // Draw loading map layer 1
+    case 2:
+        break;
+
+    // Draw loading player state
+    case 3:
+        break;
+    }
+}
+
+static void draw_game(scene_data_t *data)
 {
     int camera_x, camera_y;
     int player_x, player_y;

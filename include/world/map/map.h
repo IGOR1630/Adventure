@@ -25,6 +25,12 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define MAP_MAX_LAYERS 2
 
+enum {
+    MAP_LOAD_DIMENSIONS,
+    MAP_LOAD_LAYER_0,
+    MAP_LOAD_LAYER_1,
+};
+
 typedef struct map {
     tile_t **tiles[MAP_MAX_LAYERS];
 
@@ -33,7 +39,7 @@ typedef struct map {
 } map_t;
 
 void map_create(map_t *map, int width, int height);
-bool map_load(map_t *map);
+bool map_load(map_t *map, int what_load);
 void map_destroy(map_t *map);
 
 bool map_save(map_t *map);

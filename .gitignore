@@ -5,6 +5,7 @@ build/
 *.exe
 *.apk
 
-# Codeblocks files
+# CodeBlocks files
 *.layout
+*.depends
 
