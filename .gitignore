@@ -1,4 +1,10 @@
+# Build directory
 build/
+
+# Output formats
+*.exe
 *.apk
-*.o
+
+# Codeblocks files
+*.layout
 

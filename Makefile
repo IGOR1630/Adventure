@@ -171,5 +171,5 @@ $(GAME_BUILD_PATH)$(PATH_SEP)%.o: $(GAME_SOURCE_PATH)/%.c
 .PHONY: clean
 clean:
 	$(RM) $(GAME_BUILD_PATH)
-	$(RM) $(GAME_NAME)
+	$(RM) $(GAME_NAME_BUILD)
 
