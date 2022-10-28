@@ -17,23 +17,43 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef PLAYER_H
-#define PLAYER_H
+#ifndef ENTITY_H
+#define ENTITY_H
 
-#include <stdbool.h>
 #include "raylib.h"
 #include "world/map/map.h"
-#include "world/entity/entity.h"
+#include "world/map/tile.h"
 
-typedef struct player {
-    entity_t base;
-} player_t;
+#define ENTITY_TILE_SIZE   (TILE_DRAW_SIZE / 2.0)
+#define ENTITY_FRAME_DELAY (120.0 / 1000.0)
 
-void player_create(player_t *player, map_t *map);
-bool player_load(player_t *player);
+typedef struct entity entity_t;
 
-bool player_save(player_t *player);
-bool player_exists(void);
+struct entity {
+    Vector2 position;
+    float   velocity;
+    float   direction;
 
-#endif // !PLAYER_H
+    float hearts;
+
+    bool is_moving;
+
+    struct {
+        int   current;
+        float delay;
+        int   max;
+    } frame;
+
+    map_t *map;
+
+    void (* update)(entity_t *entity);
+    void (* draw)(entity_t *entity, Rectangle camera);
+    void (* destroy)(entity_t *entity);
+};
+
+void entity_update(entity_t *entity);
+void entity_draw(entity_t *entity, Rectangle camera);
+void entity_destroy(entity_t *entity);
+
+#endif // !ENTITY_H
 

@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -25,21 +26,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
+#include "world/entity/entity.h"
 #include "world/entity/player.h"
+
+#define PLAYER_DEFAULT_VELOCITY 5
+
+static void update(entity_t *player);
+static void draw(entity_t *player, Rectangle camera);
+static void destroy(entity_t *player);
 
 static FILE *player_goto_section(void);
 
-void player_create(player_t *player, map_t map)
+void player_create(player_t *player, map_t *map)
 {
-    player->map = map;
+    player->base.map = map;
 
-    player->position = (Vector2) {
-        .x = map.width / 2 - 1,
-        .y = map.height / 2 - 1,
+    player->base.position = (Vector2) {
+        .x = map->width / 2 - 1,
+        .y = map->height / 2 - 1,
     };
+
+    player->base.velocity = PLAYER_DEFAULT_VELOCITY;
+
+    player->base.draw = draw;
+    player->base.update = update;
+    player->base.destroy = destroy;
 }
 
-bool player_load(player_t *player, map_t map)
+bool player_load(player_t *player)
 {
     int c;
 
@@ -79,7 +93,13 @@ bool player_load(player_t *player, map_t map)
             fgetc(file);
 
             if (strcmp(token, "Position") == 0)
-                fread(&player->position, sizeof(Vector2), 1, file);
+                fread(&player->base.position, sizeof(Vector2), 1, file);
+            else if (strcmp(token, "Velocity") == 0)
+                fread(&player->base.velocity, sizeof(float), 1, file);
+            else if (strcmp(token, "Direction") == 0)
+                fread(&player->base.direction, sizeof(float), 1, file);
+            else if (strcmp(token, "Hearts") == 0)
+                fread(&player->base.hearts, sizeof(float), 1, file);
         }
     }
 
@@ -97,7 +117,19 @@ bool player_save(player_t *player)
     fprintf(file, "<Player\n");
 
     fprintf(file, "Position ");
-    fwrite(&player->position, sizeof(Vector2), 1, file);
+    fwrite(&player->base.position, sizeof(Vector2), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "Velocity ");
+    fwrite(&player->base.velocity, sizeof(float), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "Direction ");
+    fwrite(&player->base.direction, sizeof(float), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "Hearts ");
+    fwrite(&player->base.hearts, sizeof(float), 1, file);
     fprintf(file, "\n");
 
     fprintf(file, ">Player\n");
@@ -142,6 +174,45 @@ bool player_exists(void)
     return player_section_found && !open_player_section;
 }
 
+static void update(entity_t *player)
+{
+    Vector2 next_position = player->position;
+
+    if (player->is_moving) {
+        next_position.x += cos(player->direction) * player->velocity
+            * GetFrameTime();
+
+        next_position.y += sin(player->direction) * player->velocity
+            * GetFrameTime();
+    }
+
+    if (next_position.x < 0)
+        next_position.x = 0;
+
+    if (next_position.y < 0)
+        next_position.y = 0;
+
+    player->position = next_position;
+}
+
+static void draw(entity_t *player, Rectangle camera)
+{
+    Rectangle tile = {
+        .x = (player->position.x - camera.x) * TILE_DRAW_SIZE,
+        .y = (player->position.y - camera.y) * TILE_DRAW_SIZE,
+
+        .width = ENTITY_TILE_SIZE,
+        .height = ENTITY_TILE_SIZE,
+    };
+
+    DrawRectangleRec(tile, RED);
+}
+
+static void destroy(entity_t *player)
+{
+    (void) player;
+}
+
 static FILE *player_goto_section(void)
 {
     int c;
@@ -171,55 +242,5 @@ static FILE *player_goto_section(void)
 
     fclose(file);
     return (file = game_file("a"));
-}
-
-void player_update(player_t *player, Vector2 direction)
-{
-    Vector2 pos = {
-        .x = player->position.x + direction.x * 5 * GetFrameTime(),
-        .y = player->position.y + direction.y * 5 * GetFrameTime(),
-    };
-
-    // Clamp the new position to map bounds
-    if (pos.x < 0)
-        pos.x = 0;
-    else if (pos.x >= player->map.width - 1)
-        pos.x = player->map.width - 1;
-
-    if (pos.y < 0)
-        pos.y = 0;
-    else if (pos.y >= player->map.height - 1)
-        pos.y = player->map.height - 1;
-
-    // Check collisions
-    direction.x = direction.x > 0 ? direction.x : 0;
-    direction.y = direction.y > 0 ? direction.y : 0;
-/*
-    if (TILE_IS_EQUAL(player->map.tiles[0][(int) player->position.y]
-                [(int) (pos.x + direction.x)], TILE_NEW(5, 0, 0))
-            && TILE_IS_EQUAL(player->map.tiles[0][(int) player->position.y + 1]
-                [(int) (pos.x + direction.x)], TILE_NEW(5, 0, 0)))
-        */player->position.x = pos.x;
-
-    /*if (TILE_IS_EQUAL(player->map.tiles[0][(int) (pos.y + direction.y)]
-                [(int) player->position.x], TILE_NEW(5, 0, 0))
-            && TILE_IS_EQUAL(player->map.tiles[0][(int) (pos.y + direction.y)]
-                [(int) player->position.x + 1], TILE_NEW(5, 0, 0)))
-        */player->position.y = pos.y;
-}
-
-void player_draw(player_t *player, Rectangle *camera)
-{
-    Rectangle tile = {
-        .x = (player->position.x - camera->x) * 32,
-        .y = (player->position.y - camera->y) * 32,
-
-        .width = 32,
-        .height = 32,
-    };
-
-    DrawRectangleRec(tile, RED);
-    DrawText(TextFormat("%.2f %.2f", player->position.x, player->position.y),
-            0, 0, 20, RED);
 }
 

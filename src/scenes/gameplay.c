@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include "game.h"
 #include "scene.h"
+#include "utils/utils.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
 #include "world/entity/player.h"
@@ -28,7 +29,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef PLATFORM_ANDROID
 #include "ui/virtual_joystick.h"
 #endif // PLATFORM_ANDROID
-
 
 struct scene_data {
     map_t map;
@@ -47,11 +47,9 @@ scene_data_t *gameplay_init(void)
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
     map_load(&data->map);
-    player_load(&data->player, data->map);
 
-#ifdef PLATFORM_ANDROID
-    virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
-#endif // PLATFORM_ANDROID
+    player_create(&data->player, &data->map);
+    player_load(&data->player);
 
     data->camera = (Rectangle) {
         .x = 0,
@@ -65,15 +63,22 @@ scene_data_t *gameplay_init(void)
 
     data->spritesheet = game_get_texture("tiles");
 
+#ifdef PLATFORM_ANDROID
+    virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
+#endif // PLATFORM_ANDROID
+
     return data;
 }
 
 void gameplay_deinit(scene_data_t *data)
 {
+    // Save the map state and free the memory
     map_save(&data->map);
     map_destroy(&data->map);
 
+    // Save the player state and free the memory
     player_save(&data->player);
+    entity_destroy((entity_t *) &data->player);
 
     free(data);
 }
@@ -97,11 +102,14 @@ void gameplay_update(scene_data_t *data)
         direction.x = -1;
 #endif // PLATFORM_ANDROID
 
-    player_update(&data->player, direction);
+    // Update the player state
+    data->player.base.direction = vec2ang(direction.x, direction.y);
+    data->player.base.is_moving = direction.x != 0 || direction.y != 0;
+    entity_update((entity_t *) &data->player);
 
     // Update the game camera
-    data->camera.x = data->player.position.x + 1 - data->camera.width / 2;
-    data->camera.y = data->player.position.y + 1 - data->camera.height / 2;
+    data->camera.x = data->player.base.position.x + 1 - data->camera.width / 2;
+    data->camera.y = data->player.base.position.y + 1 - data->camera.height / 2;
 
     if (data->camera.x < 0)
         data->camera.x = 0;
@@ -136,8 +144,8 @@ void gameplay_draw(scene_data_t *data)
 
     ClearBackground(BLACK);
 
-    player_x = data->player.position.x;
-    player_y = data->player.position.y;
+    player_x = data->player.base.position.x;
+    player_y = data->player.base.position.y;
 
     for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
         for (int y = 0; y < data->camera.height; y++) {
@@ -149,7 +157,7 @@ void gameplay_draw(scene_data_t *data)
                 if (layer == 1) {
                     // Draw the player
                     if (player_x == camera_x && player_y == camera_y)
-                        player_draw(&data->player, &data->camera);
+                        entity_draw((entity_t *) &data->player, data->camera);
                 }
 
                 if (tile_empty(data->map.tiles[layer][camera_y][camera_x]))

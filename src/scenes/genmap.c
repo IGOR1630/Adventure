@@ -94,7 +94,7 @@ scene_data_t *genmap_init(void)
         map_create(&data->map, map_width, map_height);
 
         if (!player_exists())
-            player_create(&data->player, data->map);
+            player_create(&data->player, &data->map);
     } else {
         // Jump to the last stage that change to game scene
         data->generation_stage = 5;
