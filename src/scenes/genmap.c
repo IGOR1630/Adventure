@@ -82,7 +82,6 @@ scene_data_t *genmap_init(void)
     srand(time(NULL));
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
-
     if (!map_exists()) {
         if (width < height) {
             map_width = GENMAP_MAP_BASE_SIZE;
@@ -117,13 +116,14 @@ scene_data_t *genmap_init(void)
 
 void genmap_deinit(scene_data_t *data)
 {
-    if (!map_exists())
+    if (!map_exists()) {
         map_save(&data->map);
+        map_destroy(&data->map);
+    }
 
     if (!player_exists())
         player_save(&data->player);
 
-    map_destroy(&data->map);
     free(data);
 }
 
