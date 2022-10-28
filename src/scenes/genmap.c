@@ -98,7 +98,7 @@ scene_data_t *genmap_init(void)
             player_create(&data->player, data->map);
     } else {
         // Jump to the last stage that change to game scene
-        data->generation_stage = 4;
+        data->generation_stage = 5;
         data->generation_stage_time = 0;
 
         return data;
