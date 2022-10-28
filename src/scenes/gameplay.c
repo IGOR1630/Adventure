@@ -22,6 +22,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "scene.h"
 #include "utils/utils.h"
+#include "utils/list.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
 #include "world/entity/player.h"
@@ -35,6 +36,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 struct scene_data {
     map_t map;
     player_t player;
+
+    list(entity_t *) entities;
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_t virtual_joystick;
@@ -57,6 +60,8 @@ scene_data_t *gameplay_init(void)
     scene_data_t *data = malloc(sizeof(scene_data_t));
 
     data->loading_stage = 0;
+
+    list_create(data->entities);
 
     data->camera = (Rectangle) {
         .x = 0,
@@ -86,6 +91,11 @@ void gameplay_deinit(scene_data_t *data)
     // Save the player state and free the memory
     player_save(&data->player);
     entity_destroy((entity_t *) &data->player);
+
+    for (unsigned i = 0; i < list_size(data->entities); i++)
+        entity_destroy(list_get(data->entities, i));
+
+    list_destroy(data->entities);
 
     free(data);
 }
@@ -171,6 +181,9 @@ static void update_game(scene_data_t *data)
         data->camera.y = 0;
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
+
+    for (unsigned i = 0; i < list_size(data->entities); i++)
+        entity_update(list_get(data->entities, i));
 }
 
 static void draw_loading(scene_data_t *data)
@@ -272,6 +285,9 @@ static void draw_game(scene_data_t *data)
             }
         }
     }
+
+    for (unsigned i = 0; i < list_size(data->entities); i++)
+        entity_draw(list_get(data->entities, i), data->camera);
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_draw(&data->virtual_joystick);
