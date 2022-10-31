@@ -24,8 +24,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "raylib.h"
 #include "game.h"
 #include "scene.h"
+#include "utils/list.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
+#include "world/entity/spawner.h"
 #include "world/entity/player.h"
 
 #define GENMAP_MAP_BASE_SIZE          300
@@ -52,6 +54,9 @@ struct scene_data {
     map_t map;
     player_t player;
 
+    list(Vector2) spawn_points;
+    spawner_list_t spawners;
+
     int map_border_size;
 
     int    generation_steps;
@@ -66,11 +71,13 @@ static void genmap_stage1(scene_data_t *data);
 static void genmap_stage2(scene_data_t *data);
 static void genmap_stage3(scene_data_t *data);
 static void genmap_stage4(scene_data_t *data);
+static void genmap_stage5(scene_data_t *data);
 
 // Helper functions
 static int stage1_count_neighbors(map_t *map, int x, int y);
 static int stage2_find_neighbors(map_t *map, int x, int y);
 static int stage4_count_neighbors(map_t *map, int x, int y, tile_t tile);
+static void stage5_generate_spawners(scene_data_t *data, int spawners);
 
 scene_data_t *genmap_init(void)
 {
@@ -95,6 +102,11 @@ scene_data_t *genmap_init(void)
 
         if (!player_exists())
             player_create(&data->player, &data->map);
+
+        if (!spawner_exists()) {
+            list_create(data->spawn_points);
+            spawner_create(&data->spawners);
+        }
     } else {
         // Jump to the last stage that change to game scene
         data->generation_stage = 5;
@@ -124,6 +136,13 @@ void genmap_deinit(scene_data_t *data)
     if (!player_exists())
         player_save(&data->player);
 
+    if (!spawner_exists()) {
+        list_destroy(data->spawn_points);
+
+        spawner_save(&data->spawners);
+        spawner_destroy(&data->spawners);
+    }
+
     free(data);
 }
 
@@ -147,6 +166,9 @@ void genmap_update(scene_data_t *data)
         break;
     case 4:
         genmap_stage4(data);
+        break;
+    case 5:
+        genmap_stage5(data);
         break;
     default:
         game_set_scene("gameplay");
@@ -201,7 +223,7 @@ void genmap_draw(scene_data_t *data)
             case 2:
                 draw_layers = 1;
                 break;
-            case 3: case 4:
+            case 3: case 4: case 5:
                 draw_layers = 2;
                 break;
             }
@@ -230,6 +252,12 @@ void genmap_draw(scene_data_t *data)
                     tile_rotation_origin,
                     tile_rotation(data->map.tiles[layer][y][x]), WHITE);
             }
+
+            if (data->generation_stage == 5)
+                for (unsigned i = 0; i < list_size(data->spawners); i++)
+                    if (list_get(data->spawners, i).position.x == x
+                            && list_get(data->spawners, i).position.y == y)
+                        DrawRectangleRec(tile, BLUE);
 
             tile.x += tile.width;
         }
@@ -487,6 +515,25 @@ static void genmap_stage4(scene_data_t *data)
     }
 }
 
+/* The fifth generation stage:
+ *
+ *   On this stage are generated the spawn points of enemies the number of steps
+ * aren't pre determined because its how many as possible spawn points to place
+ * on the map, therefore, is only stop when isn't possible to place other spawn.
+ */
+static void genmap_stage5(scene_data_t *data)
+{
+    if (data->generation_steps == 0) {
+        for (int y = 0; y < data->map.height; y++)
+            for (int x = 0; x < data->map.width; x++)
+                list_add(data->spawn_points, ((Vector2) { x, y }));
+
+        data->generation_steps = 2;
+    }
+
+    stage5_generate_spawners(data, 40);
+}
+
 static int stage1_count_neighbors(map_t *map, int x, int y)
 {
     int next_x, next_y;
@@ -554,5 +601,44 @@ static int stage4_count_neighbors(map_t *map, int x, int y, tile_t tile)
     }
 
     return neighbors;
+}
+
+static void stage5_generate_spawners(scene_data_t *data, int spawners)
+{
+    Vector2 point;
+    Vector2 spawner_position;
+
+    bool is_valid_point = false;
+    int point_number;
+
+    if (spawners == 0 || list_size(data->spawn_points) == 0)
+        return;
+
+    while (!is_valid_point && list_size(data->spawn_points) > 0) {
+        point_number = rand() % list_size(data->spawn_points);
+        point = list_get(data->spawn_points, point_number);
+
+        is_valid_point = true;
+        for (unsigned i = 0; i < list_size(data->spawners); i++) {
+            spawner_position = list_get(data->spawners, i).position;
+
+            if (pow(point.x - spawner_position.x, 2)
+                    + pow(point.y - spawner_position.y, 2)
+                    < pow(SPAWNER_DISTANCE_RADIUS, 2)) {
+                is_valid_point = false;
+                break;
+            }
+        }
+
+        list_remove(data->spawn_points, point_number);
+
+        if (!is_valid_point)
+            continue;
+
+        spawner_new(&data->spawners, point);
+        data->generation_steps = 2;
+    }
+
+    stage5_generate_spawners(data, spawners - 1);
 }
 
