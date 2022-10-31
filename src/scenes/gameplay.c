@@ -222,11 +222,6 @@ static void draw_game(scene_data_t *data)
         .height = 16,
     };
 
-    Vector2 tile_rotation_origin = {
-        .x = TILE_DRAW_SIZE / 2.0,
-        .y = TILE_DRAW_SIZE / 2.0,
-    };
-
     ClearBackground(BLACK);
 
     player_x = data->player.base.position.x;
@@ -248,11 +243,8 @@ static void draw_game(scene_data_t *data)
                 if (tile_empty(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
 
-                tile.x = tile_rotation_origin.x
-                    + (camera_x - data->camera.x) * tile.width;
-
-                tile.y = tile_rotation_origin.y
-                    + (camera_y - data->camera.y) * tile.height;
+                tile.x = (camera_x - data->camera.x) * tile.width;
+                tile.y = (camera_y - data->camera.y) * tile.height;
 
                 sprite.x = tile_x(data->map.tiles[layer][camera_y][camera_x])
                     * fabs(sprite.width);
@@ -276,9 +268,7 @@ static void draw_game(scene_data_t *data)
                 tile.height++;
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
-                    tile_rotation_origin,
-                    tile_rotation(data->map.tiles[layer][camera_y][camera_x]),
-                    WHITE);
+                    (Vector2) { 0, 0, }, 0, WHITE);
 
                 tile.width--;
                 tile.height--;

@@ -191,8 +191,6 @@ void genmap_draw(scene_data_t *data)
         .height = 16,
     };
 
-    Vector2 tile_rotation_origin;
-
     // The tile is a square, therefore, have the same size each side. This also
     // fix a bug of little gaps between some tiles when drawing due the previous
     // calculation was producing different sizes for each side.
@@ -203,15 +201,11 @@ void genmap_draw(scene_data_t *data)
     tile.width = tile.height = MIN((float) game_width() / data->map.width,
         (float) game_height() / data->map.height);
 
-    // The origin of rotation of the image is the center of the image that has
-    // sane size sides.
-    tile_rotation_origin.x = tile_rotation_origin.y = tile.width / 2;
-
     ClearBackground(BLACK);
 
-    tile.y = tile_rotation_origin.y;
+    tile.y = 0;
     for (int y = 0; y < data->map.height; y++) {
-        tile.x = tile_rotation_origin.x;
+        tile.x = 0;
 
         for (int x = 0; x < data->map.width; x++) {
             switch (data->generation_stage) {
@@ -249,8 +243,7 @@ void genmap_draw(scene_data_t *data)
                     sprite.height = fabs(sprite.height);
 
                 DrawTexturePro(data->spritesheet, sprite, tile,
-                    tile_rotation_origin,
-                    tile_rotation(data->map.tiles[layer][y][x]), WHITE);
+                    (Vector2) { 0, 0 }, 0, WHITE);
             }
 
             if (data->generation_stage == 5)
