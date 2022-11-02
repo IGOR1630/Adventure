@@ -29,7 +29,7 @@ typedef struct player {
     entity_t base;
 } player_t;
 
-void player_create(player_t *player, map_t *map);
+player_t *player_create(map_t *map);
 bool player_load(player_t *player);
 
 bool player_save(player_t *player);

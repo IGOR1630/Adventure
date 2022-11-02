@@ -37,8 +37,10 @@ static void destroy(entity_t *player);
 
 static FILE *player_goto_section(void);
 
-void player_create(player_t *player, map_t *map)
+player_t *player_create(map_t *map)
 {
+    player_t *player = malloc(sizeof(player_t));
+
     player->base.map = map;
 
     player->base.position = (Vector2) {
@@ -51,6 +53,8 @@ void player_create(player_t *player, map_t *map)
     player->base.draw = draw;
     player->base.update = update;
     player->base.destroy = destroy;
+
+    return player;
 }
 
 bool player_load(player_t *player)
@@ -210,7 +214,7 @@ static void draw(entity_t *player, Rectangle camera)
 
 static void destroy(entity_t *player)
 {
-    (void) player;
+    free((player_t *) player);
 }
 
 static FILE *player_goto_section(void)

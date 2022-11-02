@@ -35,8 +35,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 struct scene_data {
     map_t map;
-    player_t player;
 
+    // The first entity its always the player.
     list(entity_t *) entities;
 
 #ifdef PLATFORM_ANDROID
@@ -89,8 +89,7 @@ void gameplay_deinit(scene_data_t *data)
     map_destroy(&data->map);
 
     // Save the player state and free the memory
-    player_save(&data->player);
-    entity_destroy((entity_t *) &data->player);
+    player_save((player_t *) list_get(data->entities, 0));
 
     for (unsigned i = 0; i < list_size(data->entities); i++)
         entity_destroy(list_get(data->entities, i));
@@ -137,8 +136,8 @@ static void update_loading(scene_data_t *data)
 
     // Load player state
     case 3:
-        player_create(&data->player, &data->map);
-        player_load(&data->player);
+        list_add(data->entities, (entity_t *) player_create(&data->map));
+        player_load((player_t *) list_get(data->entities, 0));
         break;
     }
 
@@ -164,13 +163,16 @@ static void update_game(scene_data_t *data)
 #endif // PLATFORM_ANDROID
 
     // Update the player state
-    data->player.base.direction = vec2ang(direction.x, direction.y);
-    data->player.base.is_moving = direction.x != 0 || direction.y != 0;
-    entity_update((entity_t *) &data->player);
+    list_get(data->entities, 0)->direction = vec2ang(direction.x, direction.y);
+    list_get(data->entities, 0)->is_moving = direction.x != 0 || direction.y != 0;
 
     // Update the game camera
-    data->camera.x = data->player.base.position.x + 1 - data->camera.width / 2;
-    data->camera.y = data->player.base.position.y + 1 - data->camera.height / 2;
+    // NOTE: The +1 its to really centralize the camera.
+    data->camera.x = list_get(data->entities, 0)->position.x + 1
+        - data->camera.width / 2;
+
+    data->camera.y = list_get(data->entities, 0)->position.y + 1
+        - data->camera.height / 2;
 
     if (data->camera.x < 0)
         data->camera.x = 0;
@@ -210,7 +212,6 @@ static void draw_loading(scene_data_t *data)
 static void draw_game(scene_data_t *data)
 {
     int camera_x, camera_y;
-    int player_x, player_y;
 
     Rectangle tile = {
         .width = TILE_DRAW_SIZE,
@@ -224,21 +225,12 @@ static void draw_game(scene_data_t *data)
 
     ClearBackground(BLACK);
 
-    player_x = data->player.base.position.x;
-    player_y = data->player.base.position.y;
-
     for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
         for (int y = 0; y < data->camera.height; y++) {
             camera_y = y + data->camera.y;
 
             for (int x = 0; x < data->camera.width; x++) {
                 camera_x = x + data->camera.x;
-
-                if (layer == 1) {
-                    // Draw the player
-                    if (player_x == camera_x && player_y == camera_y)
-                        entity_draw((entity_t *) &data->player, data->camera);
-                }
 
                 if (tile_empty(data->map.tiles[layer][camera_y][camera_x]))
                     continue;
