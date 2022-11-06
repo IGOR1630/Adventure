@@ -52,7 +52,7 @@ enum {
 
 struct scene_data {
     map_t map;
-    player_t player;
+    player_t *player;
 
     list(Vector2) spawn_points;
     spawner_list_t spawners;
@@ -101,7 +101,7 @@ scene_data_t *genmap_init(void)
         map_create(&data->map, map_width, map_height);
 
         if (!player_exists())
-            player_create(&data->player, &data->map);
+            data->player = player_create(&data->map);
 
         if (!spawner_exists()) {
             list_create(data->spawn_points);
@@ -134,7 +134,7 @@ void genmap_deinit(scene_data_t *data)
     }
 
     if (!player_exists())
-        player_save(&data->player);
+        player_save(data->player);
 
     if (!spawner_exists()) {
         list_destroy(data->spawn_points);

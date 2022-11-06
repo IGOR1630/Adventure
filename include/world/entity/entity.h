@@ -21,6 +21,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ENTITY_H
 
 #include "raylib.h"
+#include "utils/list.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
 
@@ -28,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define ENTITY_FRAME_DELAY (120.0 / 1000.0)
 
 typedef struct entity entity_t;
+typedef list(entity_t *) entity_list_t;
 
 struct entity {
     Vector2 position;
@@ -45,6 +47,8 @@ struct entity {
     } frame;
 
     map_t *map;
+
+    unsigned spawner_id;
 
     void (* update)(entity_t *entity);
     void (* draw)(entity_t *entity, Rectangle camera);

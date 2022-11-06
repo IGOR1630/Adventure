@@ -23,14 +23,19 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdbool.h>
 #include "raylib.h"
 #include "utils/list.h"
+#include "world/entity/entity.h"
 
 #define SPAWNER_DISTANCE_RADIUS 20
 
 typedef struct {
     Vector2 position;
 
-    int spawn_entities;
+    int spawn_min_entities;
+    int spawn_max_entities;
+
     int spawn_radius;
+
+    int spawned_entities;
 } spawner_t;
 
 typedef list(spawner_t) spawner_list_t;
@@ -38,6 +43,8 @@ typedef list(spawner_t) spawner_list_t;
 void spawner_create(spawner_list_t *spawners);
 bool spawner_load(spawner_list_t *spawners);
 void spawner_destroy(spawner_list_t *spawners);
+
+void spawner_update(spawner_list_t *spawners, entity_list_t *entities);
 
 void spawner_new(spawner_list_t *spawners, Vector2 point);
 

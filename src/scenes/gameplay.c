@@ -25,19 +25,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "utils/list.h"
 #include "world/map/map.h"
 #include "world/map/tile.h"
+#include "world/entity/spawner.h"
 #include "world/entity/player.h"
 
 #ifdef PLATFORM_ANDROID
 #include "ui/virtual_joystick.h"
 #endif // PLATFORM_ANDROID
 
-#define GAMEPLAY_LOAD_STAGES 4
+#define GAMEPLAY_LOAD_STAGES 5
 
 struct scene_data {
     map_t map;
 
     // The first entity its always the player.
-    list(entity_t *) entities;
+    entity_list_t entities;
+
+    spawner_list_t spawners;
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_t virtual_joystick;
@@ -96,6 +99,9 @@ void gameplay_deinit(scene_data_t *data)
 
     list_destroy(data->entities);
 
+    spawner_save(&data->spawners);
+    spawner_destroy(&data->spawners);
+
     free(data);
 }
 
@@ -138,6 +144,12 @@ static void update_loading(scene_data_t *data)
     case 3:
         list_add(data->entities, (entity_t *) player_create(&data->map));
         player_load((player_t *) list_get(data->entities, 0));
+        break;
+
+    // Load spawners
+    case 4:
+        spawner_create(&data->spawners);
+        spawner_load(&data->spawners);
         break;
     }
 
@@ -184,8 +196,28 @@ static void update_game(scene_data_t *data)
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
 
-    for (unsigned i = 0; i < list_size(data->entities); i++)
-        entity_update(list_get(data->entities, i));
+    // Update all entities
+    for (unsigned i = 0; i < list_size(data->entities); i++) {
+        if (CheckCollisionRecs(data->camera,
+                    (Rectangle) {
+                        list_get(data->entities, i)->position.x,
+                        list_get(data->entities, i)->position.y,
+                        1, 1,
+                    })) {
+            entity_update(list_get(data->entities, i));
+        } else {
+            // Free one entity from the given spawner
+            list_get(data->spawners,
+                    list_get(data->entities, i)->spawner_id).spawned_entities--;
+
+            // Destroy and remove the entity
+            entity_destroy(list_get(data->entities, i));
+            list_remove(data->entities, i);
+        }
+    }
+
+    // Update the spawners
+    spawner_update(&data->spawners, &data->entities);
 }
 
 static void draw_loading(scene_data_t *data)
@@ -205,6 +237,10 @@ static void draw_loading(scene_data_t *data)
 
     // Draw loading player state
     case 3:
+        break;
+
+    // Draw loading spawners
+    case 4:
         break;
     }
 }

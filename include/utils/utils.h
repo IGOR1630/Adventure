@@ -29,7 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
         : atan((y) / (x)) + ((x) < 0 ? M_PI : M_PI * 2)                        \
 )
 
-#define deg2rad(degrees) ((degress) * (M_PI / 180.0))
+#define deg2rad(degrees) ((degrees) * (M_PI / 180.0))
 #define rad2deg(radians) ((radians) * (180.0 / M_PI))
 
 #define dbg_point()                                                            \

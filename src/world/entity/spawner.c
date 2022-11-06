@@ -18,14 +18,22 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <ctype.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "game.h"
 #include "utils/list.h"
+#include "utils/utils.h"
+#include "world/entity/entity.h"
 #include "world/entity/spawner.h"
+#include "world/entity/player.h"
+
+#define RANDINT(min, max) ((min) + rand() % ((max) - (min) + 1))
+#define SPAWMER_SPAWN_RADIUS 5
 
 static FILE *spawner_goto_section(void);
+static Vector2 spawner_entity_position(Vector2 center, float radius);
 
 void spawner_create(spawner_list_t *spawners)
 {
@@ -73,9 +81,13 @@ bool spawner_load(spawner_list_t *spawners)
 
             if (strcmp(token, "Spawner") == 0) {
                 fgetc(file);
-                fread(&spawner, sizeof(spawner_t), 1, file);
+                fread(&spawner.position, sizeof(Vector2), 1, file);
+                fread(&spawner.spawn_min_entities, sizeof(int), 1, file);
+                fread(&spawner.spawn_max_entities, sizeof(int), 1, file);
+                fread(&spawner.spawn_radius, sizeof(int), 1, file);
                 fgetc(file);
 
+                spawner.spawned_entities = 0;
                 list_add(*spawners, spawner);
             }
         }
@@ -93,13 +105,69 @@ void spawner_destroy(spawner_list_t *spawners)
     list_destroy(*spawners);
 }
 
+// Placeholder
+entity_t *slime_create(Vector2 position);
+void spawner_update(spawner_list_t *spawners, entity_list_t *entities)
+{
+    spawner_t *spawner;
+    entity_t  *player = list_get(*entities, 0);
+
+    Vector2 spawn_entity_pos;
+
+    for (unsigned i = 0; i < list_size(*spawners); i++) {
+        spawner = &list_get(*spawners, i);
+
+        if (!CheckCollisionCircles(player->position, SPAWMER_SPAWN_RADIUS,
+                    spawner->position, spawner->spawn_radius))
+            continue;
+
+        // If the spawner still has entities spawned don't spawn.
+        if (spawner->spawned_entities > 0)
+            continue;
+
+        spawner->spawned_entities = RANDINT(spawner->spawn_min_entities,
+                spawner->spawn_max_entities);
+        for (int j = 0, k = 0; j < spawner->spawned_entities; j++) {
+            // This do-while will select a valid position for the new entity
+            // generated.
+            do {
+                spawn_entity_pos = spawner_entity_position(spawner->position,
+                    spawner->spawn_radius);
+
+                for (k = list_size(*entities) - 1; k > 0; k--)
+                    if (list_get(*entities, k)->spawner_id == i &&
+                        CheckCollisionRecs(
+                            (Rectangle) {
+                                spawn_entity_pos.x,
+                                spawn_entity_pos.y,
+                                1, 1
+                            },
+                            (Rectangle) {
+                                list_get(*entities, k)->position.x,
+                                list_get(*entities, k)->position.y,
+                                1, 1
+                            })
+                        )
+                        break;
+            } while (k > 0);
+
+            list_add(*entities, slime_create(spawn_entity_pos));
+            list_get(*entities, list_size(*entities) - 1)->spawner_id = i;
+        }
+    }
+}
+
 void spawner_new(spawner_list_t *spawners, Vector2 position)
 {
     spawner_t spawner = (spawner_t) {
         .position = position,
 
-        .spawn_entities = rand() % 10,
-        .spawn_radius = 15,
+        .spawn_min_entities = 3,
+        .spawn_max_entities = 8,
+
+        .spawn_radius = 3,
+
+        .spawned_entities = 0,
     };
 
     list_add(*spawners, spawner);
@@ -116,7 +184,10 @@ bool spawner_save(spawner_list_t *spawners)
 
     for (unsigned i = 0; i < list_size(*spawners); i++) {
         fprintf(file, "Spawner ");
-        fwrite(&list_get(*spawners, i), sizeof(spawner_t), 1, file);
+        fwrite(&list_get(*spawners, i).position, sizeof(Vector2), 1, file);
+        fwrite(&list_get(*spawners, i).spawn_min_entities, sizeof(int), 1, file);
+        fwrite(&list_get(*spawners, i).spawn_max_entities, sizeof(int), 1, file);
+        fwrite(&list_get(*spawners, i).spawn_radius, sizeof(int), 1, file);
         fprintf(file, "\n");
     }
 
@@ -191,5 +262,20 @@ static FILE *spawner_goto_section(void)
 
     fclose(file);
     return (file = game_file("a"));
+}
+
+static Vector2 spawner_entity_position(Vector2 center, float radius)
+{
+    double x, y;
+
+    do {
+        x = (rand() / (double) RAND_MAX) * 2.0 - 1.0;
+        y = (rand() / (double) RAND_MAX) * 2.0 - 1.0;
+    } while ((x * x) + (y * y) > 1);
+
+    return (Vector2) {
+        .x = x * radius + center.x,
+        .y = y * radius + center.y,
+    };
 }
 
