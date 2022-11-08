@@ -24,7 +24,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include "game.h"
-#include "world/map/map.h"
 #include "world/map/tile.h"
 #include "world/entity/entity.h"
 #include "world/entity/player.h"
@@ -37,17 +36,11 @@ static void destroy(entity_t *player);
 
 static FILE *player_goto_section(void);
 
-player_t *player_create(map_t *map)
+player_t *player_create(Vector2 position)
 {
     player_t *player = malloc(sizeof(player_t));
 
-    player->base.map = map;
-
-    player->base.position = (Vector2) {
-        .x = map->width / 2 - 1,
-        .y = map->height / 2 - 1,
-    };
-
+    player->base.position = position;
     player->base.velocity = PLAYER_DEFAULT_VELOCITY;
 
     player->base.draw = draw;

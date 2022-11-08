@@ -21,41 +21,49 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "raylib.h"
 #include "world/entity/entity.h"
 
-void entity_update(entity_t *entity)
+void entity_update(entity_list_t *entities)
 {
-    if (entity == NULL)
-        return;
+    float time = GetTime();
+    entity_t *entity;
 
-    if (GetTime() - entity->frame.delay >= ENTITY_FRAME_DELAY) {
-        entity->frame.current++;
+    for (unsigned i = 0; i < list_size(*entities); i++) {
+        entity = list_get(*entities, i);
 
-        if (entity->frame.current >= entity->frame.max)
-            entity->frame.current = 0;
+        if (time - entity->frame.delay >= ENTITY_FRAME_DELAY) {
+            entity->frame.current++;
 
-        entity->frame.delay = GetTime();
+            if (entity->frame.current >= entity->frame.max)
+                entity->frame.current = 0;
+
+            entity->frame.delay = GetTime();
+        }
+
+        entity->update(entity);
+    }
+}
+
+void entity_draw(entity_list_t *entities, Rectangle camera)
+{
+    entity_t *entity;
+
+    for (unsigned i = 0; i < list_size(*entities); i++) {
+        entity = list_get(*entities, i);
+
+        if (CheckCollisionPointRec(entity->position, camera))
+            entity->draw(entity, camera);
+    }
+}
+
+void entity_destroy(entity_list_t *entities)
+{
+    entity_t *entity;
+
+    for (unsigned i = 0; i < list_size(*entities); i++) {
+        entity = list_get(*entities, i);
+        entity->destroy(entity);
     }
 
-    entity->update(entity);
-}
+    list_destroy(*entities);
 
-void entity_draw(entity_t *entity, Rectangle camera)
-{
-    if (entity == NULL)
-        return;
-
-    if (entity->position.x < camera.x || entity->position.y < camera.y
-            || entity->position.x > camera.x + camera.width
-            || entity->position.y > camera.y + camera.height)
-        return;
-
-    entity->draw(entity, camera);
-}
-
-void entity_destroy(entity_t *entity)
-{
-    if (entity == NULL)
-        return;
-
-    entity->destroy(entity);
 }
 

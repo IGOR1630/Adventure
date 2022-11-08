@@ -46,8 +46,6 @@ struct entity {
         int   max;
     } frame;
 
-    map_t *map;
-
     unsigned spawner_id;
 
     void (* update)(entity_t *entity);
@@ -55,9 +53,9 @@ struct entity {
     void (* destroy)(entity_t *entity);
 };
 
-void entity_update(entity_t *entity);
-void entity_draw(entity_t *entity, Rectangle camera);
-void entity_destroy(entity_t *entity);
+void entity_update(entity_list_t *entities);
+void entity_draw(entity_list_t *entities, Rectangle camera);
+void entity_destroy(entity_list_t *entities);
 
 #endif // !ENTITY_H
 

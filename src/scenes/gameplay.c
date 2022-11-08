@@ -87,19 +87,12 @@ scene_data_t *gameplay_init(void)
 
 void gameplay_deinit(scene_data_t *data)
 {
-    // Save the map state and free the memory
     map_save(&data->map);
-    map_destroy(&data->map);
-
-    // Save the player state and free the memory
     player_save((player_t *) list_get(data->entities, 0));
-
-    for (unsigned i = 0; i < list_size(data->entities); i++)
-        entity_destroy(list_get(data->entities, i));
-
-    list_destroy(data->entities);
-
     spawner_save(&data->spawners);
+
+    map_destroy(&data->map);
+    entity_destroy(&data->entities);
     spawner_destroy(&data->spawners);
 
     free(data);
@@ -142,7 +135,7 @@ static void update_loading(scene_data_t *data)
 
     // Load player state
     case 3:
-        list_add(data->entities, (entity_t *) player_create(&data->map));
+        list_add(data->entities, (entity_t *) player_create((Vector2) { 0, 0 }));
         player_load((player_t *) list_get(data->entities, 0));
         break;
 
@@ -196,27 +189,7 @@ static void update_game(scene_data_t *data)
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
 
-    // Update all entities
-    for (unsigned i = 0; i < list_size(data->entities); i++) {
-        if (CheckCollisionRecs(data->camera,
-                    (Rectangle) {
-                        list_get(data->entities, i)->position.x,
-                        list_get(data->entities, i)->position.y,
-                        1, 1,
-                    })) {
-            entity_update(list_get(data->entities, i));
-        } else {
-            // Free one entity from the given spawner
-            list_get(data->spawners,
-                    list_get(data->entities, i)->spawner_id).spawned_entities--;
-
-            // Destroy and remove the entity
-            entity_destroy(list_get(data->entities, i));
-            list_remove(data->entities, i);
-        }
-    }
-
-    // Update the spawners
+    entity_update(&data->entities);
     spawner_update(&data->spawners, &data->entities);
 }
 
@@ -304,8 +277,7 @@ static void draw_game(scene_data_t *data)
         }
     }
 
-    for (unsigned i = 0; i < list_size(data->entities); i++)
-        entity_draw(list_get(data->entities, i), data->camera);
+    entity_draw(&data->entities, data->camera);
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_draw(&data->virtual_joystick);

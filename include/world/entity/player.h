@@ -22,14 +22,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <stdbool.h>
 #include "raylib.h"
-#include "world/map/map.h"
 #include "world/entity/entity.h"
 
 typedef struct player {
     entity_t base;
 } player_t;
 
-player_t *player_create(map_t *map);
+player_t *player_create(Vector2 position);
 bool player_load(player_t *player);
 
 bool player_save(player_t *player);

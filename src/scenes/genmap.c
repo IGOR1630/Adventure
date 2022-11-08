@@ -101,7 +101,10 @@ scene_data_t *genmap_init(void)
         map_create(&data->map, map_width, map_height);
 
         if (!player_exists())
-            data->player = player_create(&data->map);
+            data->player = player_create((Vector2) {
+                .x = map_width / 2 - 1,
+                .y = map_height / 2 - 1,
+            });
 
         if (!spawner_exists()) {
             list_create(data->spawn_points);
