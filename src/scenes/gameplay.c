@@ -189,7 +189,7 @@ static void update_game(scene_data_t *data)
     else if (data->camera.y >= data->map.height - data->camera.height)
         data->camera.y = data->map.height - data->camera.height;
 
-    entity_update(&data->entities);
+    entity_update(&data->entities, &data->map, data->camera);
     spawner_update(&data->spawners, &data->entities);
 }
 

@@ -21,10 +21,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "raylib.h"
 #include "world/entity/entity.h"
 
-void entity_update(entity_list_t *entities)
+void entity_update(entity_list_t *entities, map_t *map, Rectangle camera)
 {
     float time = GetTime();
     entity_t *entity;
+
+    camera.x -= (camera.width *= 2.0) / 3.0;
+    camera.y -= (camera.height *= 2.0) / 3.0;
 
     for (unsigned i = 0; i < list_size(*entities); i++) {
         entity = list_get(*entities, i);
@@ -38,7 +41,14 @@ void entity_update(entity_list_t *entities)
             entity->frame.delay = GetTime();
         }
 
-        entity->update(entity);
+        if (CheckCollisionRecs(camera, (Rectangle) { entity->position.x,
+                    entity->position.y, ENTITY_TILE_SIZE / TILE_DRAW_SIZE,
+                    ENTITY_TILE_SIZE / TILE_DRAW_SIZE })) {
+            entity->update(entity);
+        } else {
+            entity->destroy(entity);
+            list_remove(*entities, i);
+        }
     }
 }
 
@@ -49,7 +59,9 @@ void entity_draw(entity_list_t *entities, Rectangle camera)
     for (unsigned i = 0; i < list_size(*entities); i++) {
         entity = list_get(*entities, i);
 
-        if (CheckCollisionPointRec(entity->position, camera))
+        if (CheckCollisionRecs(camera, (Rectangle) { entity->position.x,
+                    entity->position.y, ENTITY_TILE_SIZE / TILE_DRAW_SIZE,
+                    ENTITY_TILE_SIZE / TILE_DRAW_SIZE }))
             entity->draw(entity, camera);
     }
 }

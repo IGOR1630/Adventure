@@ -53,7 +53,7 @@ struct entity {
     void (* destroy)(entity_t *entity);
 };
 
-void entity_update(entity_list_t *entities);
+void entity_update(entity_list_t *entities, map_t *map, Rectangle camera);
 void entity_draw(entity_list_t *entities, Rectangle camera);
 void entity_destroy(entity_list_t *entities);
 

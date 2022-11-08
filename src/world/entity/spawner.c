@@ -113,6 +113,7 @@ void spawner_update(spawner_list_t *spawners, entity_list_t *entities)
     entity_t  *player = list_get(*entities, 0);
 
     Vector2 spawn_entity_pos;
+    int entities_to_spawn;
 
     for (unsigned i = 0; i < list_size(*spawners); i++) {
         spawner = &list_get(*spawners, i);
@@ -121,13 +122,26 @@ void spawner_update(spawner_list_t *spawners, entity_list_t *entities)
                     spawner->position, spawner->spawn_radius))
             continue;
 
-        // If the spawner still has entities spawned don't spawn.
-        if (spawner->spawned_entities > 0)
-            continue;
+        if (spawner->spawned_entities > 0) {
+            spawner->spawned_entities = 0;
 
-        spawner->spawned_entities = RANDINT(spawner->spawn_min_entities,
-                spawner->spawn_max_entities);
-        for (int j = 0, k = 0; j < spawner->spawned_entities; j++) {
+            for (unsigned j = 1; j < list_size(*entities); j++)
+                if (list_get(*entities, j)->spawner_id == i)
+                    spawner->spawned_entities++;
+        } else {
+            // This will be calculated once when the spawner->spawned_entities
+            // is zero at first time, next times that is zero it'll generated
+            // the entities until reach this value again.
+            spawner->max_spawned_entities = RANDINT(spawner->spawn_min_entities,
+                    spawner->spawn_max_entities);
+        }
+
+        entities_to_spawn = spawner->max_spawned_entities
+            - spawner->spawned_entities;
+
+        spawner->spawned_entities = spawner->max_spawned_entities;
+
+        for (int j = 0, k = 0; j < entities_to_spawn; j++) {
             // This do-while will select a valid position for the new entity
             // generated.
             do {
