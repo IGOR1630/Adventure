@@ -39,7 +39,7 @@ endif
 #-------------------------------------------------------------------------------
 CC = gcc
 CFLAGS = -Wall -Wextra -Wpedantic -std=c11
-CPPFLAGS = -D$(PLATFORM) -D$(GRAPHICS)
+CPPFLAGS = -D$(PLATFORM) -D$(GRAPHICS) -MMD -MP
 
 
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
@@ -138,6 +138,7 @@ endif
 
 SOURCES := $(subst /,$(PATH_SEP),$(SOURCES))
 OBJECTS = $(subst $(GAME_SOURCE_PATH)$(PATH_SEP),$(GAME_BUILD_PATH)$(PATH_SEP),$(SOURCES:.c=.o))
+DEPENDENCIES = $(OBJECTS:.o=.d)
 
 
 #-------------------------------------------------------------------------------
@@ -160,6 +161,8 @@ endif
 #-------------------------------------------------------------------------------
 .PHONY: all
 all: $(GAME_NAME_BUILD)
+
+-include $(DEPENDENCIES)
 
 $(GAME_NAME)$(GAME_NAME_EXT): $(OBJECTS)
 	$(CC) $^ $(LDFLAGS) $(LDLIBS) -o $@
