@@ -27,7 +27,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define SPAWNER_DISTANCE_RADIUS 20
 
-typedef struct spawner {
+typedef struct {
     Vector2 position;
 
     int spawn_min_entities;

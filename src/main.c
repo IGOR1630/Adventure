@@ -41,6 +41,10 @@ int main (int argc, char *argv[])
 
         game_load_texture("joystick_base.png", "joy-base");
         game_load_texture("joystick_top.png", "joy-top");
+
+        game_load_texture("slime_spawn.png", "slime-spawn");
+        game_load_texture("slime_move.png", "slime-moving");
+        game_load_texture("slime_idle.png", "slime-idle");
     }
 
     game_set_scene("genmap");

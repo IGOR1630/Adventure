@@ -26,10 +26,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "world/map/tile.h"
 
 #define ENTITY_TILE_SIZE   (TILE_DRAW_SIZE / 2.0)
+#define ENTITY_SPRITE_SIZE 16.0
+
 #define ENTITY_FRAME_DELAY (120.0 / 1000.0)
 
 typedef struct entity entity_t;
 typedef list(entity_t *) entity_list_t;
+
+typedef enum {
+    ENTITY_STATE_SPAWN,
+    ENTITY_STATE_MOVING,
+    ENTITY_STATE_IDLE,
+} entity_state_t;
 
 struct entity {
     Vector2 position;
@@ -38,7 +46,7 @@ struct entity {
 
     float hearts;
 
-    bool is_moving;
+    entity_state_t state;
 
     struct {
         int   current;
@@ -48,7 +56,7 @@ struct entity {
 
     unsigned spawner_id;
 
-    void (* update)(entity_t *entity);
+    void (* update)(unsigned entity, entity_list_t *entities, map_t *map);
     void (* draw)(entity_t *entity, Rectangle camera);
     void (* destroy)(entity_t *entity);
 };

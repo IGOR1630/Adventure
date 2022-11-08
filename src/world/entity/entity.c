@@ -44,7 +44,7 @@ void entity_update(entity_list_t *entities, map_t *map, Rectangle camera)
         if (CheckCollisionRecs(camera, (Rectangle) { entity->position.x,
                     entity->position.y, ENTITY_TILE_SIZE / TILE_DRAW_SIZE,
                     ENTITY_TILE_SIZE / TILE_DRAW_SIZE })) {
-            entity->update(entity);
+            entity->update(i, entities, map);
         } else {
             entity->destroy(entity);
             list_remove(*entities, i);

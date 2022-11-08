@@ -169,7 +169,8 @@ static void update_game(scene_data_t *data)
 
     // Update the player state
     list_get(data->entities, 0)->direction = vec2ang(direction.x, direction.y);
-    list_get(data->entities, 0)->is_moving = direction.x != 0 || direction.y != 0;
+    list_get(data->entities, 0)->state = direction.x != 0 || direction.y != 0 ?
+        ENTITY_STATE_MOVING : ENTITY_STATE_IDLE;
 
     // Update the game camera
     // NOTE: The +1 its to really centralize the camera.

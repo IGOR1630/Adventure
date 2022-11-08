@@ -24,13 +24,15 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdio.h>
 #include <string.h>
 #include "game.h"
+#include "utils/list.h"
 #include "world/map/tile.h"
+#include "world/map/map.h"
 #include "world/entity/entity.h"
 #include "world/entity/player.h"
 
 #define PLAYER_DEFAULT_VELOCITY 5
 
-static void update(entity_t *player);
+static void update(unsigned entity, entity_list_t *entities, map_t *map);
 static void draw(entity_t *player, Rectangle camera);
 static void destroy(entity_t *player);
 
@@ -46,6 +48,8 @@ player_t *player_create(Vector2 position)
     player->base.draw = draw;
     player->base.update = update;
     player->base.destroy = destroy;
+
+    player->base.state = ENTITY_STATE_IDLE;
 
     return player;
 }
@@ -171,15 +175,18 @@ bool player_exists(void)
     return player_section_found && !open_player_section;
 }
 
-static void update(entity_t *player)
+static void update(unsigned entity, entity_list_t *entities, map_t *map)
 {
-    Vector2 next_position = player->position;
+    entity_t *base = list_get(*entities, entity);
+    Vector2 next_position = base->position;
 
-    if (player->is_moving) {
-        next_position.x += cos(player->direction) * player->velocity
+    (void) map;
+
+    if (base->state == ENTITY_STATE_MOVING) {
+        next_position.x += cos(base->direction) * base->velocity
             * GetFrameTime();
 
-        next_position.y += sin(player->direction) * player->velocity
+        next_position.y += sin(base->direction) * base->velocity
             * GetFrameTime();
     }
 
@@ -189,7 +196,7 @@ static void update(entity_t *player)
     if (next_position.y < 0)
         next_position.y = 0;
 
-    player->position = next_position;
+    base->position = next_position;
 }
 
 static void draw(entity_t *player, Rectangle camera)
