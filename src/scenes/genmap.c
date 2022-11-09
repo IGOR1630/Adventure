@@ -112,7 +112,7 @@ scene_data_t *genmap_init(void)
         }
     } else {
         // Jump to the last stage that change to game scene
-        data->generation_stage = 5;
+        data->generation_stage = 6;
         data->generation_stage_time = 0;
 
         return data;
