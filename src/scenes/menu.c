@@ -36,9 +36,33 @@ scene_data_t *menu_init(void) {
 
 void menu_update(void *data)
 {
+    Rectangle start_rect = {
+        610, 345, MeasureTextEx(alagard, "Start", 50, -1).x, 50
+    };
+
+    Rectangle exit_rect = {
+        614, 405, MeasureTextEx(alagard, "Exit", 50, -1).x, 50
+    };
+
     ///L
     if (IsKeyDown(KEY_DOWN)) quadrado_girando.y = 430;
     if (IsKeyDown(KEY_UP)) quadrado_girando.y = 366;
+    if (IsKeyDown(KEY_ENTER)) game_end_run();
+
+    if (CheckCollisionPointRec(game_virtual_mouse(), start_rect)) {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            game_set_scene("genmap");
+
+        quadrado_girando.y = 366;
+    }
+
+    if (CheckCollisionPointRec(game_virtual_mouse(), exit_rect)) {
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            game_end_run();
+
+        quadrado_girando.y = 430;
+    }
+
 
     RIGHT = (RIGHT + 1) % 1280;
 
