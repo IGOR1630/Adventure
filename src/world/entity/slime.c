@@ -28,12 +28,16 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "world/map/map.h"
 #include "world/entity/entity.h"
 
+#define SLIME_PLAYER_UNTARGET_RADIUS 12
+#define SQ(x) ((x) * (x))
+
 typedef struct {
     entity_t base;
 
     struct {
         float field;
         float radius;
+        bool target_player;
     } view;
 
     struct {
@@ -56,8 +60,8 @@ entity_t *slime_create(Vector2 position)
     slime->base.destroy = destroy;
 
     slime->base.position = position;
-    slime->base.velocity = 3;
-    slime->base.direction = 0;
+    slime->base.velocity = 4;
+    slime->base.direction = deg2rad(rand() % 360);
 
     slime->base.frame.current = 0;
     slime->base.frame.delay = GetTime();
@@ -65,8 +69,9 @@ entity_t *slime_create(Vector2 position)
 
     slime->base.state = ENTITY_STATE_SPAWN;
 
-    slime->view.field = deg2rad(90);
+    slime->view.field = deg2rad(60);
     slime->view.radius = 4;
+    slime->view.target_player = false;
 
     slime->spritesheet.spawn = game_get_texture("slime-spawn");
     slime->spritesheet.moving = game_get_texture("slime-moving");
@@ -77,8 +82,40 @@ entity_t *slime_create(Vector2 position)
 
 static void update(unsigned entity, entity_list_t *entities, map_t *map)
 {
+#define MAP_COLLISION_X(x, y, bound, tile)                                     \
+    (tile_equal(map->tiles[0][(int) (y)][(int) (x)], tile)                     \
+        && tile_equal(map->tiles[0][(int) ((y) + (bound))][(int) (x)], tile))
+
+#define MAP_COLLISION_Y(x, y, bound, tile)                                     \
+    (tile_equal(map->tiles[0][(int) (y)][(int) (x)], tile)                     \
+        && tile_equal(map->tiles[0][(int) (y)][(int) ((x) + (bound))], tile))
+
     entity_t *base = list_get(*entities, entity);
     slime_t *slime = (slime_t *) base;
+
+    entity_t *player = list_get(*entities, 0);
+
+    Vector2 next_position = base->position;
+
+    Vector2 bounds[4] = {
+        { 0, 0 },
+        { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, 0 },
+        { 0, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
+        { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
+    };
+
+    float radius;
+    float angle = vec2ang(player->position.x - base->position.x,
+        player->position.y - base->position.y);
+
+    float start_angle = base->direction - slime->view.field / 2.0;
+    float end_angle = base->direction + slime->view.field / 2.0;
+
+    if (end_angle > M_PI * 2)
+        end_angle -= M_PI * 2;
+
+    if (start_angle < 0)
+        start_angle += M_PI * 2;
 
     switch (base->state) {
     case ENTITY_STATE_SPAWN:
@@ -93,28 +130,68 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
         base->frame.max = slime->spritesheet.moving.width / ENTITY_SPRITE_SIZE;
 
         if (base->frame.current == 0) {
-            base->direction = deg2rad(rand() % 360);
+            if (slime->view.target_player)
+                base->direction = angle;
+            else if (rand() / (double) RAND_MAX <= 0.5)
+                base->direction = deg2rad(rand() % 360);
         } else if (base->frame.current > 3) {
-            base->position.x += base->velocity * cos(base->direction)
+            next_position.x += base->velocity * cos(base->direction)
                 * GetFrameTime();
-            base->position.y += base->velocity * sin(base->direction)
+            if (!MAP_COLLISION_X(next_position.x, base->position.y, bounds[3].x,
+                        tile_new(11, 2))
+                    || !MAP_COLLISION_X(next_position.x + bounds[3].x,
+                        base->position.y, bounds[3].x, tile_new(11, 2)))
+                next_position.x = base->position.x;
+
+            next_position.y += base->velocity * sin(base->direction)
                 * GetFrameTime();
+            if (!MAP_COLLISION_Y(base->position.x, next_position.y, bounds[3].y,
+                        tile_new(11, 2))
+                    || !MAP_COLLISION_Y(base->position.x,
+                        next_position.y + bounds[3].y, bounds[3].y, tile_new(11, 2)))
+                next_position.y = base->position.y;
         }
 
         if (base->frame.current + 1 == base->frame.max)
             base->state = ENTITY_STATE_IDLE;
+
+        base->position = next_position;
 
         break;
 
     case ENTITY_STATE_IDLE:
         base->frame.max = slime->spritesheet.idle.width / ENTITY_SPRITE_SIZE;
 
-        if ((rand() / (double) RAND_MAX) <= 0.008) {
+        if ((rand() / (double) RAND_MAX) <= 0.008 || slime->view.target_player) {
             base->state = ENTITY_STATE_MOVING;
             base->frame.current = 0;
         }
 
         break;
+    }
+
+    // Player targeting
+    for (int i = 0; i < 4; i++) {
+        radius = SQ(player->position.x + bounds[i].x - base->position.x)
+            + SQ(player->position.y + bounds[i].y - base->position.y);
+
+        if (radius <= SQ(slime->view.radius)) {
+            if (i > 0)
+                angle = vec2ang(player->position.x + bounds[i].x - base->position.x,
+                    player->position.y + bounds[i].y - base->position.y);
+
+            if (start_angle > end_angle
+                    && ((start_angle < angle && angle < M_PI * 2)
+                        || (angle < end_angle))) {
+                slime->view.target_player = true;
+                break;
+            } else if (start_angle < angle && angle < end_angle) {
+                slime->view.target_player = true;
+                break;
+            }
+        } else if (radius >= SQ(SLIME_PLAYER_UNTARGET_RADIUS)) {
+            slime->view.target_player = false;
+        }
     }
 }
 
