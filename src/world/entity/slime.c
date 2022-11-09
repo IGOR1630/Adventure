@@ -111,11 +111,11 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
     float start_angle = base->direction - slime->view.field / 2.0;
     float end_angle = base->direction + slime->view.field / 2.0;
 
-    if (end_angle > M_PI * 2)
-        end_angle -= M_PI * 2;
+    if (end_angle > UTILS_PI * 2)
+        end_angle -= UTILS_PI * 2;
 
     if (start_angle < 0)
-        start_angle += M_PI * 2;
+        start_angle += UTILS_PI * 2;
 
     switch (base->state) {
     case ENTITY_STATE_SPAWN:
@@ -181,7 +181,7 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
                     player->position.y + bounds[i].y - base->position.y);
 
             if (start_angle > end_angle
-                    && ((start_angle < angle && angle < M_PI * 2)
+                    && ((start_angle < angle && angle < UTILS_PI * 2)
                         || (angle < end_angle))) {
                 slime->view.target_player = true;
                 break;

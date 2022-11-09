@@ -22,15 +22,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include <math.h>
 
+#define UTILS_PI 3.14159265358979323846
+
 #define vec2ang(x, y) (                                                        \
     (x) == 0 ?                                                                 \
         ((y) == 0 ? 0                                                          \
-            : (M_PI / 2) * ((y) > 0 ? 1 : 3))                                  \
-        : atan((y) / (x)) + ((x) < 0 ? M_PI : M_PI * ((y) < 0) * 2)            \
+            : (UTILS_PI / 2) * ((y) > 0 ? 1 : 3))                              \
+        : atan((y) / (x)) + ((x) < 0 ? UTILS_PI : UTILS_PI * ((y) < 0) * 2)    \
 )
 
-#define deg2rad(degrees) ((degrees) * (M_PI / 180.0))
-#define rad2deg(radians) ((radians) * (180.0 / M_PI))
+#define deg2rad(degrees) ((degrees) * (UTILS_PI / 180.0))
+#define rad2deg(radians) ((radians) * (180.0 / UTILS_PI))
 
 #define dbg_point()                                                            \
     printf("FILE: %s\nFUNC: %s\nLINE: %u\n\n", __FILE__, __func__, __LINE__);
