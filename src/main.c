@@ -29,6 +29,9 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
 
     { // Scenes
+        SCENE_IMPORT(menu);
+        game_register_scene(SCENE(menu));
+
         SCENE_IMPORT(genmap);
         game_register_scene(SCENE(genmap));
 
@@ -37,6 +40,16 @@ int main (int argc, char *argv[])
     }
 
     { // Resources
+        game_load_texture("joystick.png", "joystick-img");
+        game_load_texture("cloud.png", "cloud-img");
+        game_load_texture("gram.png", "gram-img");
+        game_load_texture("TreeTwo.png", "TreeTwo-img");
+        game_load_texture("Tree.png", "Tree-img");
+        game_load_texture("plantone.png", "plantone-img");
+        game_load_texture("planttwo.png", "planttwo-img");
+        game_load_texture("cogu.png", "cogu-img");
+        game_load_texture("mushroom.png", "mushroom-img");
+
         game_load_texture("tiles.png", "tiles");
 
         game_load_texture("joystick_base.png", "joy-base");
@@ -47,7 +60,7 @@ int main (int argc, char *argv[])
         game_load_texture("slime_idle.png", "slime-idle");
     }
 
-    game_set_scene("genmap");
+    game_set_scene("menu");
     game_run();
 
     game_deinit();
