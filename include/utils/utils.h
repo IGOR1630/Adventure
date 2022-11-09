@@ -25,8 +25,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define vec2ang(x, y) (                                                        \
     (x) == 0 ?                                                                 \
         ((y) == 0 ? 0                                                          \
-            : (M_PI / 2) * ((y) > 0 ? 1 : -1))                                 \
-        : atan((y) / (x)) + ((x) < 0 ? M_PI : M_PI * 2)                        \
+            : (M_PI / 2) * ((y) > 0 ? 1 : 3))                                  \
+        : atan((y) / (x)) + ((x) < 0 ? M_PI : M_PI * ((y) < 0) * 2)            \
 )
 
 #define deg2rad(degrees) ((degrees) * (M_PI / 180.0))
