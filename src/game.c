@@ -171,7 +171,7 @@ int game_height(void)
 
 FILE *game_file(const char *mode)
 {
-    char filename[200] = "game.sav";
+    char filename[200] = "../game.sav";
     FILE *file;
 
     if ((file = fopen(filename, mode)) == NULL) {
