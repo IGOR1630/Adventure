@@ -405,6 +405,8 @@ static void genmap_stage2(scene_data_t *data)
 
                 // Corners all
                 TEST_NEIGHBORS(0xA5, 0xA5, tile_new(7, 4));
+
+                next.tiles[0][y][x] = tile_collidable(next.tiles[0][y][x]);
             } else {
                 next.tiles[0][y][x] = tile_new(11, 2);
             }
@@ -454,7 +456,7 @@ static void genmap_stage3(scene_data_t *data)
         } while (!tree_generated);
 
         tree_type = rand() % 2;
-        data->map.tiles[1][tree_y - 0][tree_x] = tile_new(tree_type, 4);
+        data->map.tiles[1][tree_y - 0][tree_x] = tile_collidable(tile_new(tree_type, 4));
         data->map.tiles[1][tree_y - 1][tree_x] = tile_new(tree_type, 3);
     }
 
@@ -488,8 +490,8 @@ static void genmap_stage4(scene_data_t *data)
                                 tile_new(11, 0)) > 2
                             || stage4_count_neighbors(&data->map, x, y,
                                 tile_new(11, 1)) > 3))
-                    tile = !stage4_count_neighbors(&data->map, x, y,
-                        tile_new(1 - type, 2)) ? tile_new(type, 2) : 0;
+                    tile = tile_collidable(!stage4_count_neighbors(&data->map, x, y,
+                        tile_new(1 - type, 2)) ? tile_new(type, 2) : 0);
             } else if (tile_equal(data->map.tiles[0][y][x], tile_new(9, 1))) {
                 type = rand() % 2;
 

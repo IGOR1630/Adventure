@@ -209,3 +209,8 @@ static FILE *map_goto_section(void)
     return (file = game_file("a"));
 }
 
+tile_t map_tile(map_t *map, int layer, int x, int y)
+{
+    return map->tiles[layer][y][x];
+}
+

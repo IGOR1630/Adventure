@@ -20,18 +20,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #ifndef TILE_H
 #define TILE_H
 
-#define TILE_DRAW_SIZE 32.0
+#define TILE_DRAW_SIZE 64.0
 
 #define tile_new(x, y) (1u << 31 | (y) << 8 | (x))
 
 #define tile_x(tile) ((tile) & 0x000000FF)
 #define tile_y(tile) (((tile) >> 8) & 0x000000FF)
 
-#define tile_rotate(tile, rotation) ((tile) | (rotation) << 16)
-#define tile_rotation(tile) (((tile) >> 16) & 0x000001FF)
-
 #define tile_flip(tile, axis) ((tile) | 1u << ((axis) + 29))
 #define tile_flipped(tile, axis) (((tile) >> (((axis) + 29))) & 0x1)
+
+#define tile_collidable(tile) ((tile) | 1u << 28)
+#define tile_collision(tile) (((tile) >> 28) & 0x1)
 
 #define tile_equal(tile, other) (((tile) & 0x0000FFFF) == ((other) & 0x0000FFFF))
 #define tile_empty(tile) (!(((tile) >> 31) & 0x1))

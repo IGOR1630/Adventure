@@ -46,5 +46,7 @@ bool map_save(map_t *map);
 
 bool map_exists(void);
 
+tile_t map_tile(map_t *map, int layer, int x, int y);
+
 #endif // !MAP_H
 

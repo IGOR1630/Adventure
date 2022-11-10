@@ -82,14 +82,6 @@ entity_t *slime_create(Vector2 position)
 
 static void update(unsigned entity, entity_list_t *entities, map_t *map)
 {
-#define MAP_COLLISION_X(x, y, bound, tile)                                     \
-    (tile_equal(map->tiles[0][(int) (y)][(int) (x)], tile)                     \
-        && tile_equal(map->tiles[0][(int) ((y) + (bound))][(int) (x)], tile))
-
-#define MAP_COLLISION_Y(x, y, bound, tile)                                     \
-    (tile_equal(map->tiles[0][(int) (y)][(int) (x)], tile)                     \
-        && tile_equal(map->tiles[0][(int) (y)][(int) ((x) + (bound))], tile))
-
     entity_t *base = list_get(*entities, entity);
     slime_t *slime = (slime_t *) base;
 
@@ -137,19 +129,23 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
         } else if (base->frame.current > 3) {
             next_position.x += base->velocity * cos(base->direction)
                 * GetFrameTime();
-            if (!MAP_COLLISION_X(next_position.x, base->position.y, bounds[3].x,
-                        tile_new(11, 2))
-                    || !MAP_COLLISION_X(next_position.x + bounds[3].x,
-                        base->position.y, bounds[3].x, tile_new(11, 2)))
-                next_position.x = base->position.x;
 
             next_position.y += base->velocity * sin(base->direction)
                 * GetFrameTime();
-            if (!MAP_COLLISION_Y(base->position.x, next_position.y, bounds[3].y,
-                        tile_new(11, 2))
-                    || !MAP_COLLISION_Y(base->position.x,
-                        next_position.y + bounds[3].y, bounds[3].y, tile_new(11, 2)))
-                next_position.y = base->position.y;
+
+            for (int i = 0; i < 4; i++) {
+                for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
+                    if (tile_collision(map_tile(map, layer,
+                                    next_position.x + bounds[i].x,
+                                    base->position.y + bounds[i].y)))
+                        next_position.x = base->position.x;
+
+                    if (tile_collision(map_tile(map, layer,
+                                    base->position.x + bounds[i].x,
+                                    next_position.y + bounds[i].y)))
+                        next_position.y = base->position.y;
+                }
+            }
         }
 
         if (base->frame.current + 1 == base->frame.max)

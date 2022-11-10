@@ -180,7 +180,13 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
     entity_t *base = list_get(*entities, entity);
     Vector2 next_position = base->position;
 
-    (void) map;
+    Vector2 bounds[4] = {
+        { 0, 0 },
+        { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, 0 },
+        { 0, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
+        { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
+    };
+
 
     if (base->state == ENTITY_STATE_MOVING) {
         next_position.x += cos(base->direction) * base->velocity
@@ -188,6 +194,20 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
 
         next_position.y += sin(base->direction) * base->velocity
             * GetFrameTime();
+
+        for (int i = 0; i < 4; i++) {
+            for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
+                if (tile_collision(map_tile(map, layer,
+                                next_position.x + bounds[i].x,
+                                base->position.y + bounds[i].y)))
+                    next_position.x = base->position.x;
+
+                if (tile_collision(map_tile(map, layer,
+                                base->position.x + bounds[i].x,
+                                next_position.y + bounds[i].y)))
+                    next_position.y = base->position.y;
+            }
+        }
     }
 
     if (next_position.x < 0)
