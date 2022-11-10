@@ -490,8 +490,9 @@ static void genmap_stage4(scene_data_t *data)
                                 tile_new(11, 0)) > 2
                             || stage4_count_neighbors(&data->map, x, y,
                                 tile_new(11, 1)) > 3))
-                    tile = tile_collidable(!stage4_count_neighbors(&data->map, x, y,
-                        tile_new(1 - type, 2)) ? tile_new(type, 2) : 0);
+                    tile = !stage4_count_neighbors(&data->map, x, y,
+                        tile_new(1 - type, 2)) ?
+                        tile_collidable(tile_new(type, 2)) : 0;
             } else if (tile_equal(data->map.tiles[0][y][x], tile_new(9, 1))) {
                 type = rand() % 2;
 
