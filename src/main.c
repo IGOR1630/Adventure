@@ -55,6 +55,11 @@ int main (int argc, char *argv[])
         game_load_texture("joystick_base.png", "joy-base");
         game_load_texture("joystick_top.png", "joy-top");
 
+        game_load_texture("back.png", "back-img");
+        game_load_texture("pause.png", "pause-img");
+        game_load_texture("unpause.png", "unpause-img");
+        game_load_texture("save.png", "save-img");
+
         game_load_texture("slime_spawn.png", "slime-spawn");
         game_load_texture("slime_move.png", "slime-moving");
         game_load_texture("slime_idle.png", "slime-idle");

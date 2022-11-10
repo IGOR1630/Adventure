@@ -49,7 +49,19 @@ struct scene_data {
     Rectangle camera;
     Texture spritesheet;
 
+    Texture pause;
+    Texture unpause;
+    Rectangle pause_button;
+
+    Texture save;
+    Rectangle save_button;
+
+    Texture back;
+    Rectangle back_button;
+
+    bool paused;
     int loading_stage;
+    int saving;
 };
 
 static void update_loading(scene_data_t *data);
@@ -77,6 +89,37 @@ scene_data_t *gameplay_init(void)
     };
 
     data->spritesheet = game_get_texture("tiles");
+
+    data->pause = game_get_texture("pause-img");
+    data->unpause = game_get_texture("unpause-img");
+    data->pause_button = (Rectangle) {
+        .x = game_width() - (game_width() / 20) * 1.2,
+        .y = (game_width() / 20) * 0.2,
+
+        .width = game_width() / 20,
+        .height = game_width() / 20,
+    };
+
+    data->save = game_get_texture("save-img");
+    data->save_button = (Rectangle) {
+        .x = game_width() - (game_width() / 20) * 2.4,
+        .y = (game_width() / 20) * 0.2,
+
+        .width = game_width() / 20,
+        .height = game_width() / 20,
+    };
+
+    data->back = game_get_texture("back-img");
+    data->back_button = (Rectangle) {
+        .x = (game_width() / 20) * 0.2,
+        .y = (game_width() / 20) * 0.2,
+
+        .width = game_width() / 20,
+        .height = game_width() / 20,
+    };
+
+    data->paused = false;
+    data->saving = 0;
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
@@ -153,45 +196,76 @@ static void update_game(scene_data_t *data)
 {
     Vector2 direction = { 0, 0 };
 
+    if (!data->paused && data->saving == 0) {
 #ifdef PLATFORM_ANDROID
-    direction = virtual_joystick_update(&data->virtual_joystick);
+        direction = virtual_joystick_update(&data->virtual_joystick);
 #else
-    if (IsKeyDown(KEY_W))
-        direction.y = -1;
-    else if (IsKeyDown(KEY_S))
-        direction.y = 1;
+        if (IsKeyDown(KEY_W))
+            direction.y = -1;
+        else if (IsKeyDown(KEY_S))
+            direction.y = 1;
 
-    if (IsKeyDown(KEY_D))
-        direction.x = 1;
-    else if (IsKeyDown(KEY_A))
-        direction.x = -1;
+        if (IsKeyDown(KEY_D))
+            direction.x = 1;
+        else if (IsKeyDown(KEY_A))
+            direction.x = -1;
 #endif // PLATFORM_ANDROID
 
-    // Update the player state
-    list_get(data->entities, 0)->direction = vec2ang(direction.x, direction.y);
-    list_get(data->entities, 0)->state = direction.x != 0 || direction.y != 0 ?
-        ENTITY_STATE_MOVING : ENTITY_STATE_IDLE;
+        // Update the player state
+        list_get(data->entities, 0)->direction = vec2ang(direction.x, direction.y);
+        list_get(data->entities, 0)->state = direction.x != 0 || direction.y != 0 ?
+            ENTITY_STATE_MOVING : ENTITY_STATE_IDLE;
 
-    // Update the game camera
-    // NOTE: The +1 its to really centralize the camera.
-    data->camera.x = list_get(data->entities, 0)->position.x + 1
-        - data->camera.width / 2;
+        // Update the game camera
+        // NOTE: The +1 its to really centralize the camera.
+        data->camera.x = list_get(data->entities, 0)->position.x + 1
+            - data->camera.width / 2;
 
-    data->camera.y = list_get(data->entities, 0)->position.y + 1
-        - data->camera.height / 2;
+        data->camera.y = list_get(data->entities, 0)->position.y + 1
+            - data->camera.height / 2;
 
-    if (data->camera.x < 0)
-        data->camera.x = 0;
-    else if (data->camera.x >= data->map.width - data->camera.width)
-        data->camera.x = data->map.width - data->camera.width;
+        if (data->camera.x < 0)
+            data->camera.x = 0;
+        else if (data->camera.x >= data->map.width - data->camera.width)
+            data->camera.x = data->map.width - data->camera.width;
 
-    if (data->camera.y < 0)
-        data->camera.y = 0;
-    else if (data->camera.y >= data->map.height - data->camera.height)
-        data->camera.y = data->map.height - data->camera.height;
+        if (data->camera.y < 0)
+            data->camera.y = 0;
+        else if (data->camera.y >= data->map.height - data->camera.height)
+            data->camera.y = data->map.height - data->camera.height;
 
-    entity_update(&data->entities, &data->map, data->camera);
-    spawner_update(&data->spawners, &data->entities);
+        entity_update(&data->entities, &data->map, data->camera);
+        spawner_update(&data->spawners, &data->entities);
+
+        if (CheckCollisionPointRec(game_virtual_mouse(), data->save_button)
+                && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            data->saving = 3;
+    }
+
+    switch (data->saving) {
+    case 1:
+        map_save(&data->map);
+        break;
+
+    case 2:
+        player_save((player_t *) list_get(data->entities, 0));
+        break;
+
+    case 3:
+        spawner_save(&data->spawners);
+        break;
+    }
+    data->saving -= data->saving > 0;
+
+    if (data->saving == 0) {
+        if (CheckCollisionPointRec(game_virtual_mouse(), data->pause_button)
+                && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            data->paused = !data->paused;
+
+        if (CheckCollisionPointRec(game_virtual_mouse(), data->back_button)
+                && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+            game_set_scene("menu");
+    }
 }
 
 static void draw_loading(scene_data_t *data)
@@ -280,8 +354,27 @@ static void draw_game(scene_data_t *data)
 
     entity_draw(&data->entities, data->camera);
 
+    if (data->paused) {
+        DrawTexturePro(data->unpause,
+            (Rectangle) { 0, 0, data->unpause.width, data->unpause.height },
+            data->pause_button, (Vector2) { 0, 0 }, 0, WHITE);
+    } else {
+        DrawTexturePro(data->save,
+            (Rectangle) { 0, 0, data->save.width, data->save.height },
+            data->save_button, (Vector2) { 0, 0 }, 0, WHITE);
+
+        DrawTexturePro(data->pause,
+            (Rectangle) { 0, 0, data->pause.width, data->pause.height },
+            data->pause_button, (Vector2) { 0, 0 }, 0, WHITE);
+    }
+
+    DrawTexturePro(data->back,
+        (Rectangle) { 0, 0, -data->back.width, data->back.height },
+        data->back_button, (Vector2) { 0, 0 }, 0, WHITE);
+
 #ifdef PLATFORM_ANDROID
-    virtual_joystick_draw(&data->virtual_joystick);
+    if (!data->paused && data->saving == 0)
+        virtual_joystick_draw(&data->virtual_joystick);
 #endif // PLATFORM_ANDROID
 }
 
