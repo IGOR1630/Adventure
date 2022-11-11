@@ -81,7 +81,21 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
     (list).count--;                                                            \
 } while (0)
 
+#define list_copy(list_from, list_to) do {                                     \
+    if ((list_to).capacity < (list_from).capacity) {                           \
+        (list_to).capacity = (list_from).capacity;                             \
+                                                                               \
+        (list_to).values = realloc((list_to).values,                           \
+            sizeof(*(list_to).values) * (list_to).capacity);                   \
+    }                                                                          \
+                                                                               \
+    (list_to).count = (list_from).count;                                       \
+    memcpy((list_to).values, (list_from).values,                               \
+        sizeof(*(list_to).values) * (list_to).count);                           \
+} while (0)
+
 #define list_size(list) ((list).count)
+#define list_empty(list) ((list).count = 0)
 
 #define list_get(list, index) ((list).values[(index)])
 #define list_set(list, index, value) (list).values[(index)] = (value)
