@@ -192,6 +192,16 @@ Vector2 game_virtual_mouse(void)
     return mouse;
 }
 
+Vector2 game_virtual_touch(int touch_number)
+{
+    Vector2 touch = GetTouchPosition(touch_number);
+
+    touch.x = (touch.x - g_game.rendering.mouse_factor.x) / g_game.rendering.scale;
+    touch.y = (touch.y - g_game.rendering.mouse_factor.y) / g_game.rendering.scale;
+
+    return touch;
+}
+
 Texture game_load_texture(const char *filename, const char *name)
 {
     Texture texture = LoadTexture(filename);
