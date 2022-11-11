@@ -41,7 +41,10 @@ void entity_update(entity_list_t *entities, map_t *map, Rectangle camera)
             entity->frame.delay = GetTime();
         }
 
-        if (CheckCollisionRecs(camera, (Rectangle) { entity->position.x,
+        if (entity->hearts <= 0) {
+            entity->destroy(entity);
+            list_remove(*entities, i);
+        } else if (CheckCollisionRecs(camera, (Rectangle) { entity->position.x,
                     entity->position.y, ENTITY_TILE_SIZE / TILE_DRAW_SIZE,
                     ENTITY_TILE_SIZE / TILE_DRAW_SIZE })) {
             entity->update(i, entities, map);

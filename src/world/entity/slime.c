@@ -63,6 +63,12 @@ entity_t *slime_create(Vector2 position)
     slime->base.velocity = 4;
     slime->base.direction = deg2rad(rand() % 360);
 
+    slime->base.hearts = 30;
+    slime->base.max_hearts = 30;
+
+    slime->base.attack = 10;
+    slime->base.defense = 5;
+
     slime->base.frame.current = 0;
     slime->base.frame.delay = GetTime();
     slime->base.frame.max = 0;
@@ -113,8 +119,10 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
     case ENTITY_STATE_SPAWN:
         base->frame.max = slime->spritesheet.spawn.width / ENTITY_SPRITE_SIZE;
 
-        if (base->frame.current + 1 == base->frame.max)
+        if (base->frame.current + 1 == base->frame.max) {
             base->state = ENTITY_STATE_IDLE;
+            base->frame.current = 0;
+        }
 
         break;
 
@@ -148,8 +156,10 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
             }
         }
 
-        if (base->frame.current + 1 == base->frame.max)
+        if (base->frame.current + 1 == base->frame.max) {
             base->state = ENTITY_STATE_IDLE;
+            base->frame.current = 0;
+        }
 
         base->position = next_position;
 
@@ -213,6 +223,13 @@ static void draw(entity_t *base, Rectangle camera)
         .height = ENTITY_TILE_SIZE,
     };
 
+    Rectangle heart_bar_rect = {
+        .x = (tile.x + tile.width / 2) - ENTITY_HEART_BAR_WIDTH / 2,
+        .y = tile.y - ENTITY_HEART_BAR_HEIGHT * 1.2,
+
+        .height = ENTITY_HEART_BAR_HEIGHT,
+    };
+
     switch (base->state) {
     case ENTITY_STATE_SPAWN:
         spritesheet = slime->spritesheet.spawn;
@@ -229,6 +246,16 @@ static void draw(entity_t *base, Rectangle camera)
 
     if (base->direction > deg2rad(90) && base->direction < deg2rad(270))
         sprite.width = -sprite.width;
+
+    if (base->hearts < base->max_hearts) {
+        heart_bar_rect.width = (base->hearts / base->max_hearts)
+            * ENTITY_HEART_BAR_WIDTH;
+
+        DrawRectangleRec(heart_bar_rect, RED);
+
+        heart_bar_rect.width = ENTITY_HEART_BAR_WIDTH;
+        DrawRectangleLinesEx(heart_bar_rect, 1, BLACK);
+    }
 
     DrawTexturePro(spritesheet, sprite, tile, (Vector2) { 0, 0 }, 0, WHITE);
 }

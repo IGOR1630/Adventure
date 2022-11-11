@@ -25,8 +25,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "world/map/map.h"
 #include "world/map/tile.h"
 
-#define ENTITY_TILE_SIZE   (TILE_DRAW_SIZE / 2.0)
-#define ENTITY_SPRITE_SIZE 16.0
+#define ENTITY_HEART_BAR_WIDTH TILE_DRAW_SIZE
+#define ENTITY_HEART_BAR_HEIGHT (TILE_DRAW_SIZE / 4.0)
+
+#define ENTITY_TILE_SIZE      (TILE_DRAW_SIZE / 2.0)
+#define ENTITY_SPRITE_SIZE    16.0
 
 #define ENTITY_FRAME_DELAY (120.0 / 1000.0)
 
@@ -45,6 +48,10 @@ struct entity {
     float   direction;
 
     float hearts;
+    float max_hearts;
+
+    float attack;
+    float defense;
 
     entity_state_t state;
 

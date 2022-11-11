@@ -34,6 +34,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define deg2rad(degrees) ((degrees) * (UTILS_PI / 180.0))
 #define rad2deg(radians) ((radians) * (180.0 / UTILS_PI))
 
+#define max(x, y) ((x) > (y) ? (x) : (y))
+#define min(x, y) ((x) < (y) ? (x) : (y))
+
 #define dbg_point()                                                            \
     printf("FILE: %s\nFUNC: %s\nLINE: %u\n\n", __FILE__, __func__, __LINE__);
 

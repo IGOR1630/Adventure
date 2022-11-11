@@ -25,6 +25,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include "game.h"
 #include "utils/list.h"
+#include "utils/utils.h"
 #include "world/map/tile.h"
 #include "world/map/map.h"
 #include "world/entity/entity.h"
@@ -45,9 +46,15 @@ player_t *player_create(Vector2 position)
     player->base.position = position;
     player->base.velocity = PLAYER_DEFAULT_VELOCITY;
 
+    player->base.attack = 20;
+    player->base.defense = 20;
+
     player->base.draw = draw;
     player->base.update = update;
     player->base.destroy = destroy;
+
+    player->base.hearts = 100;
+    player->base.max_hearts = 100;
 
     player->base.state = ENTITY_STATE_IDLE;
 
@@ -101,6 +108,12 @@ bool player_load(player_t *player)
                 fread(&player->base.direction, sizeof(float), 1, file);
             else if (strcmp(token, "Hearts") == 0)
                 fread(&player->base.hearts, sizeof(float), 1, file);
+            else if (strcmp(token, "MaxHearts") == 0)
+                fread(&player->base.max_hearts, sizeof(float), 1, file);
+            else if (strcmp(token, "Attack") == 0)
+                fread(&player->base.attack, sizeof(float), 1, file);
+            else if (strcmp(token, "Defense") == 0)
+                fread(&player->base.defense, sizeof(float), 1, file);
         }
     }
 
@@ -131,6 +144,18 @@ bool player_save(player_t *player)
 
     fprintf(file, "Hearts ");
     fwrite(&player->base.hearts, sizeof(float), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "MaxHearts ");
+    fwrite(&player->base.max_hearts, sizeof(float), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "Attack ");
+    fwrite(&player->base.attack, sizeof(float), 1, file);
+    fprintf(file, "\n");
+
+    fprintf(file, "Defense ");
+    fwrite(&player->base.defense, sizeof(float), 1, file);
     fprintf(file, "\n");
 
     fprintf(file, ">Player\n");
@@ -178,6 +203,9 @@ bool player_exists(void)
 static void update(unsigned entity, entity_list_t *entities, map_t *map)
 {
     entity_t *base = list_get(*entities, entity);
+    entity_t *enemy;
+    player_t *player = (player_t *) base;
+
     Vector2 next_position = base->position;
 
     Vector2 bounds[4] = {
@@ -219,15 +247,32 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
     base->position = next_position;
 }
 
-static void draw(entity_t *player, Rectangle camera)
+static void draw(entity_t *base, Rectangle camera)
 {
     Rectangle tile = {
-        .x = (player->position.x - camera.x) * TILE_DRAW_SIZE,
-        .y = (player->position.y - camera.y) * TILE_DRAW_SIZE,
+        .x = (base->position.x - camera.x) * TILE_DRAW_SIZE,
+        .y = (base->position.y - camera.y) * TILE_DRAW_SIZE,
 
         .width = ENTITY_TILE_SIZE,
         .height = ENTITY_TILE_SIZE,
     };
+
+    Rectangle heart_bar_rect = {
+        .x = (tile.x + tile.width / 2) - ENTITY_HEART_BAR_WIDTH / 2,
+        .y = tile.y - ENTITY_HEART_BAR_HEIGHT * 1.2,
+
+        .height = ENTITY_HEART_BAR_HEIGHT,
+    };
+
+    if (base->hearts < base->max_hearts) {
+        heart_bar_rect.width = (base->hearts / base->max_hearts)
+            * ENTITY_HEART_BAR_WIDTH;
+
+        DrawRectangleRec(heart_bar_rect, RED);
+
+        heart_bar_rect.width = ENTITY_HEART_BAR_WIDTH;
+        DrawRectangleLinesEx(heart_bar_rect, 1, BLACK);
+    }
 
     DrawRectangleRec(tile, RED);
 }

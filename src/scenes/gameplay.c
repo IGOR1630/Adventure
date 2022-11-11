@@ -195,6 +195,7 @@ static void update_loading(scene_data_t *data)
 static void update_game(scene_data_t *data)
 {
     Vector2 direction = { 0, 0 };
+    player_t *player = (player_t *) list_get(data->entities, 0);
 
     if (!data->paused && data->saving == 0) {
 #ifdef PLATFORM_ANDROID
@@ -212,16 +213,19 @@ static void update_game(scene_data_t *data)
 #endif // PLATFORM_ANDROID
 
         // Update the player state
-        list_get(data->entities, 0)->direction = vec2ang(direction.x, direction.y);
-        list_get(data->entities, 0)->state = direction.x != 0 || direction.y != 0 ?
-            ENTITY_STATE_MOVING : ENTITY_STATE_IDLE;
+        if (direction.x != 0 || direction.y != 0) {
+            player->base.direction = vec2ang(direction.x, direction.y);
+            player->base.state = ENTITY_STATE_MOVING;
+        } else {
+            player->base.state = ENTITY_STATE_IDLE;
+        }
 
         // Update the game camera
         // NOTE: The +1 its to really centralize the camera.
-        data->camera.x = list_get(data->entities, 0)->position.x + 1
+        data->camera.x = player->base.position.x + 1
             - data->camera.width / 2;
 
-        data->camera.y = list_get(data->entities, 0)->position.y + 1
+        data->camera.y = player->base.position.y + 1
             - data->camera.height / 2;
 
         if (data->camera.x < 0)
@@ -248,7 +252,7 @@ static void update_game(scene_data_t *data)
         break;
 
     case 2:
-        player_save((player_t *) list_get(data->entities, 0));
+        player_save(player);
         break;
 
     case 3:
