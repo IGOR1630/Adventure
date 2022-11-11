@@ -23,8 +23,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "game.h"
 #include "scene.h"
 #include "utils/hash.h"
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#include "utils/list.h"
+#include "utils/utils.h"
 
 static struct {
     struct {
@@ -46,6 +46,11 @@ static struct {
         Rectangle     target_destination;
     } rendering;
 
+    struct {
+        list(int) current;
+        list(int) previous;
+    } touches;
+
     hash(Texture) textures;
 
     bool running;
@@ -63,6 +68,9 @@ bool game_init(int width, int height)
 
     hash_create(g_game.textures);
 
+    list_create(g_game.touches.current);
+    list_create(g_game.touches.previous);
+
     InitWindow(0, 0, "Game");
     SetTargetFPS(60);
     ToggleFullscreen();
@@ -70,7 +78,7 @@ bool game_init(int width, int height)
 
     g_game.rendering.width = width;
     g_game.rendering.height = height;
-    g_game.rendering.scale = MIN((float) GetScreenWidth() / width,
+    g_game.rendering.scale = min((float) GetScreenWidth() / width,
         (float) GetScreenHeight() / height);
 
     g_game.rendering.mouse_factor = (Vector2) {
@@ -100,6 +108,9 @@ void game_deinit(void)
 
     hash_destroy(g_game.textures);
     hash_destroy(g_game.scene.list);
+
+    list_destroy(g_game.touches.current);
+    list_destroy(g_game.touches.previous);
 
     UnloadRenderTexture(g_game.rendering.target);
     CloseWindow();
@@ -138,10 +149,22 @@ void game_end_run(void)
 
 void game_run(void)
 {
+    static int touch_count = -1;
+
     if (g_game.scene.current.name != NULL)
         g_game.running = true;
 
     while (g_game.running && g_game.scene.current.name != NULL) {
+        if (touch_count != GetTouchPointCount()) {
+            touch_count = GetTouchPointCount();
+
+            list_copy(g_game.touches.current, g_game.touches.previous);
+            list_empty(g_game.touches.current);
+
+            for (int i = 0; i < touch_count; i++)
+                list_add(g_game.touches.current, GetTouchPointId(i));
+        }
+
         if (g_game.scene.current.name != NULL)
             g_game.scene.current.update(g_game.scene.data);
 
@@ -200,6 +223,43 @@ Vector2 game_virtual_touch(int touch_number)
     touch.y = (touch.y - g_game.rendering.mouse_factor.y) / g_game.rendering.scale;
 
     return touch;
+}
+
+bool game_touch_down(int touch_number)
+{
+    int touch_id = GetTouchPointId(touch_number);
+
+    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
+        if (touch_id == list_get(g_game.touches.current, i))
+            return true;
+
+    return false;
+}
+
+bool game_touch_up(int touch_number)
+{
+    int touch_id = GetTouchPointId(touch_number);
+
+    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
+        if (touch_id == list_get(g_game.touches.current, i))
+            return false;
+
+    return true;
+}
+
+bool game_touch_pressed(int touch_number)
+{
+    int touch_id = GetTouchPointId(touch_number);
+
+    for (unsigned i = 0; i < list_size(g_game.touches.previous); i++)
+        if (touch_id == list_get(g_game.touches.previous, i))
+            return false;
+
+    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
+        if (touch_id == list_get(g_game.touches.current, i))
+            return true;
+
+    return false;
 }
 
 Texture game_load_texture(const char *filename, const char *name)

@@ -44,6 +44,10 @@ FILE   *game_file(const char *mode);
 Vector2 game_virtual_mouse(void);
 Vector2 game_virtual_touch(int touch_number);
 
+bool    game_touch_down(int touch_number);
+bool    game_touch_up(int touch_number);
+bool    game_touch_pressed(int touch_number);
+
 Texture game_load_texture(const char *filename, const char *name);
 Texture game_get_texture(const char *name);
 
