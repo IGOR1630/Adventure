@@ -26,6 +26,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 typedef struct player {
     entity_t base;
+
+    struct {
+        Texture moving;
+        Texture idle;
+    } spritesheet;
 } player_t;
 
 player_t *player_create(Vector2 position);

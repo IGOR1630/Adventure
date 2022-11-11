@@ -63,6 +63,9 @@ int main (int argc, char *argv[])
         game_load_texture("slime_spawn.png", "slime-spawn");
         game_load_texture("slime_move.png", "slime-moving");
         game_load_texture("slime_idle.png", "slime-idle");
+
+        game_load_texture("player_move.png", "player-moving");
+        game_load_texture("player_idle.png", "player-idle");
     }
 
     game_set_scene("menu");

@@ -154,6 +154,14 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
                         next_position.y = base->position.y;
                 }
             }
+
+            // Attack the player
+            if (CheckCollisionRecs((Rectangle) {
+                        next_position.x, next_position.y,
+                        bounds[3].x, bounds[3].y }, (Rectangle) {
+                            player->position.x, player->position.y,
+                            bounds[3].x, bounds[3].y }))
+                next_position = base->position;
         }
 
         if (base->frame.current + 1 == base->frame.max) {

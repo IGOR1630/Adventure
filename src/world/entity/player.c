@@ -58,6 +58,9 @@ player_t *player_create(Vector2 position)
 
     player->base.state = ENTITY_STATE_IDLE;
 
+    player->spritesheet.moving = game_get_texture("player-moving");
+    player->spritesheet.idle = game_get_texture("player-idle");
+
     return player;
 }
 
@@ -215,8 +218,10 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
         { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
     };
 
+    switch (base->state) {
+    case ENTITY_STATE_MOVING:
+        base->frame.max = player->spritesheet.moving.width / ENTITY_SPRITE_SIZE;
 
-    if (base->state == ENTITY_STATE_MOVING) {
         next_position.x += cos(base->direction) * base->velocity
             * GetFrameTime();
 
@@ -236,6 +241,24 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
                     next_position.y = base->position.y;
             }
         }
+
+        for (unsigned i = 1; i < list_size(*entities); i++) {
+            enemy = list_get(*entities, i);
+
+            if (CheckCollisionRecs((Rectangle) {
+                    next_position.x, next_position.y,
+                    bounds[3].x, bounds[3].y }, (Rectangle) {
+                        enemy->position.x, enemy->position.y,
+                        bounds[3].x, bounds[3].y })) {
+                next_position = base->position;
+            }
+        }
+
+        break;
+
+    case ENTITY_STATE_IDLE:
+        base->frame.max = player->spritesheet.idle.width / ENTITY_SPRITE_SIZE;
+        break;
     }
 
     if (next_position.x < 0)
@@ -249,6 +272,18 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
 
 static void draw(entity_t *base, Rectangle camera)
 {
+    player_t *player = (player_t *) base;
+
+    Texture spritesheet;
+
+    Rectangle sprite = {
+        .x = base->frame.current * ENTITY_SPRITE_SIZE,
+        .y = 0,
+
+        .width = ENTITY_SPRITE_SIZE,
+        .height = ENTITY_SPRITE_SIZE,
+    };
+
     Rectangle tile = {
         .x = (base->position.x - camera.x) * TILE_DRAW_SIZE,
         .y = (base->position.y - camera.y) * TILE_DRAW_SIZE,
@@ -264,6 +299,16 @@ static void draw(entity_t *base, Rectangle camera)
         .height = ENTITY_HEART_BAR_HEIGHT,
     };
 
+    switch (base->state) {
+    case ENTITY_STATE_MOVING:
+        spritesheet = player->spritesheet.moving;
+        break;
+
+    case ENTITY_STATE_IDLE:
+        spritesheet = player->spritesheet.idle;
+        break;
+    }
+
     if (base->hearts < base->max_hearts) {
         heart_bar_rect.width = (base->hearts / base->max_hearts)
             * ENTITY_HEART_BAR_WIDTH;
@@ -274,7 +319,10 @@ static void draw(entity_t *base, Rectangle camera)
         DrawRectangleLinesEx(heart_bar_rect, 1, BLACK);
     }
 
-    DrawRectangleRec(tile, RED);
+    if (base->direction > deg2rad(90) && base->direction < deg2rad(270))
+        sprite.width = -sprite.width;
+
+    DrawTexturePro(spritesheet, sprite, tile, (Vector2) { 0, 0 }, 0, WHITE);
 }
 
 static void destroy(entity_t *player)
