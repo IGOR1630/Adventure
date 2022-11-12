@@ -40,12 +40,15 @@ typedef enum {
     ENTITY_STATE_SPAWN,
     ENTITY_STATE_MOVING,
     ENTITY_STATE_IDLE,
+    ENTITY_STATE_DAMAGING,
 } entity_state_t;
 
 struct entity {
     Vector2 position;
     float   velocity;
     float   direction;
+
+    float damage_direction;
 
     float hearts;
     float max_hearts;

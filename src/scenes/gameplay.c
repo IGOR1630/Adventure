@@ -44,6 +44,9 @@ struct scene_data {
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_t virtual_joystick;
+
+    Texture attack;
+    Rectangle attack_button;
 #endif // PLATFORM_ANDROID
 
     Rectangle camera;
@@ -123,6 +126,15 @@ scene_data_t *gameplay_init(void)
 
 #ifdef PLATFORM_ANDROID
     virtual_joystick_init(&data->virtual_joystick, 125, 175, game_height() - 175);
+
+    data->attack = game_get_texture("attack-img");
+    data->attack_button = (Rectangle) {
+        .x = game_width() - 280,
+        .y = game_height() - 250,
+
+        .width = game_width() / 10,
+        .height = game_width() / 10,
+    };
 #endif // PLATFORM_ANDROID
 
     return data;
@@ -200,6 +212,19 @@ static void update_game(scene_data_t *data)
     if (!data->paused && data->saving == 0) {
 #ifdef PLATFORM_ANDROID
         direction = virtual_joystick_update(&data->virtual_joystick);
+
+        for (int i = 0; i < min(GetTouchPointCount(), 2); i++)
+            if (CheckCollisionPointRec(game_virtual_touch(i),
+                        data->attack_button)
+                    && game_touch_pressed(game_touch_id(i))
+                    && !player->attacked)
+                player->attacking = GetTime();
+
+        for (int i = 0; i < 2; i++)
+            if (CheckCollisionPointRec(game_virtual_touch(i),
+                        data->attack_button)
+                    && game_touch_released(game_touch_id(i)))
+                player->attacked = false;
 #else
         if (IsKeyDown(KEY_W))
             direction.y = -1;
@@ -210,13 +235,19 @@ static void update_game(scene_data_t *data)
             direction.x = 1;
         else if (IsKeyDown(KEY_A))
             direction.x = -1;
+
+        if (IsKeyPressed(KEY_E) && !player->attacked)
+            player->attacking = GetTime();
+        else if (IsKeyReleased(KEY_E))
+            player->attacked = false;
 #endif // PLATFORM_ANDROID
 
         // Update the player state
-        if (direction.x != 0 || direction.y != 0) {
+        if ((direction.x != 0 || direction.y != 0)
+                && player->base.state != ENTITY_STATE_DAMAGING) {
             player->base.direction = vec2ang(direction.x, direction.y);
             player->base.state = ENTITY_STATE_MOVING;
-        } else {
+        } else if (player->base.state != ENTITY_STATE_DAMAGING) {
             player->base.state = ENTITY_STATE_IDLE;
         }
 
@@ -270,6 +301,9 @@ static void update_game(scene_data_t *data)
                 && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
             game_set_scene("menu");
     }
+
+    if (player->base.hearts == 0)
+        game_set_scene("gameover");
 }
 
 static void draw_loading(scene_data_t *data)
@@ -377,8 +411,13 @@ static void draw_game(scene_data_t *data)
         data->back_button, (Vector2) { 0, 0 }, 0, WHITE);
 
 #ifdef PLATFORM_ANDROID
-    if (!data->paused && data->saving == 0)
+    if (!data->paused && data->saving == 0) {
         virtual_joystick_draw(&data->virtual_joystick);
+
+        DrawTexturePro(data->attack,
+            (Rectangle) { 0, 0, data->attack.width, data->attack.height },
+            data->attack_button, (Vector2) { 0, 0 }, 0, WHITE);
+    }
 #endif // PLATFORM_ANDROID
 }
 

@@ -59,13 +59,17 @@ int main (int argc, char *argv[])
         game_load_texture("pause.png", "pause-img");
         game_load_texture("unpause.png", "unpause-img");
         game_load_texture("save.png", "save-img");
+        game_load_texture("attack.png", "attack-img");
 
         game_load_texture("slime_spawn.png", "slime-spawn");
         game_load_texture("slime_move.png", "slime-moving");
+        game_load_texture("slime_damaging.png", "slime-damaging");
         game_load_texture("slime_idle.png", "slime-idle");
 
         game_load_texture("player_move.png", "player-moving");
+        game_load_texture("player_damaging.png", "player-damaging");
         game_load_texture("player_idle.png", "player-idle");
+        game_load_texture("sword.png", "player-sword");
     }
 
     game_set_scene("menu");

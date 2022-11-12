@@ -43,6 +43,7 @@ typedef struct {
     struct {
         Texture spawn;
         Texture moving;
+        Texture damaging;
         Texture idle;
     } spritesheet;
 } slime_t;
@@ -82,6 +83,7 @@ entity_t *slime_create(Vector2 position)
     slime->spritesheet.spawn = game_get_texture("slime-spawn");
     slime->spritesheet.moving = game_get_texture("slime-moving");
     slime->spritesheet.idle = game_get_texture("slime-idle");
+    slime->spritesheet.damaging = game_get_texture("slime-damaging");
 
     return (entity_t *) slime;
 }
@@ -108,6 +110,8 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
 
     float start_angle = base->direction - slime->view.field / 2.0;
     float end_angle = base->direction + slime->view.field / 2.0;
+
+    static float hit_player = 0;
 
     if (end_angle > UTILS_PI * 2)
         end_angle -= UTILS_PI * 2;
@@ -160,8 +164,24 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
                         next_position.x, next_position.y,
                         bounds[3].x, bounds[3].y }, (Rectangle) {
                             player->position.x, player->position.y,
-                            bounds[3].x, bounds[3].y }))
+                            bounds[3].x, bounds[3].y })) {
+                player->state = ENTITY_STATE_DAMAGING;
+                player->frame.current = 0;
+
+                player->damage_direction = base->direction;
+
+                if (hit_player == 0) {
+                    player->hearts -= max((base->attack - player->defense)
+                        * (rand() % 2), 5);
+
+                    base->state = ENTITY_STATE_IDLE;
+                    base->frame.current = 0;
+
+                    hit_player = GetTime();
+                }
+
                 next_position = base->position;
+            }
         }
 
         if (base->frame.current + 1 == base->frame.max) {
@@ -173,16 +193,51 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
 
         break;
 
+    case ENTITY_STATE_DAMAGING:
+        base->frame.max = slime->spritesheet.damaging.width / ENTITY_SPRITE_SIZE;
+
+        next_position.x += (base->velocity / 3) * cos(base->damage_direction)
+            * GetFrameTime();
+        next_position.y += (base->velocity / 3) * sin(base->damage_direction)
+            * GetFrameTime();
+
+        for (int i = 0; i < 4; i++) {
+            for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
+                if (tile_collision(map_tile(map, layer,
+                                next_position.x + bounds[i].x,
+                                base->position.y + bounds[i].y)))
+                    next_position.x = base->position.x;
+
+                if (tile_collision(map_tile(map, layer,
+                                base->position.x + bounds[i].x,
+                                next_position.y + bounds[i].y)))
+                    next_position.y = base->position.y;
+            }
+        }
+
+        base->position = next_position;
+
+        if (base->frame.current + 1 == base->frame.max) {
+            base->state = ENTITY_STATE_IDLE;
+            base->frame.current = 0;
+        }
+
+        break;
+
     case ENTITY_STATE_IDLE:
         base->frame.max = slime->spritesheet.idle.width / ENTITY_SPRITE_SIZE;
 
-        if ((rand() / (double) RAND_MAX) <= 0.008 || slime->view.target_player) {
+        if (((rand() / (double) RAND_MAX) <= 0.008 || slime->view.target_player)
+                && hit_player == 0) {
             base->state = ENTITY_STATE_MOVING;
             base->frame.current = 0;
         }
 
         break;
     }
+
+    if (hit_player > 0 && GetTime() - hit_player >= 0.3)
+        hit_player = 0;
 
     // Player targeting
     for (int i = 0; i < 4; i++) {
@@ -245,6 +300,10 @@ static void draw(entity_t *base, Rectangle camera)
 
     case ENTITY_STATE_MOVING:
         spritesheet = slime->spritesheet.moving;
+        break;
+
+    case ENTITY_STATE_DAMAGING:
+        spritesheet = slime->spritesheet.damaging;
         break;
 
     case ENTITY_STATE_IDLE:

@@ -27,9 +27,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 typedef struct player {
     entity_t base;
 
+    bool attacked;
+    float attacking;
+
     struct {
         Texture moving;
+        Texture damaging;
         Texture idle;
+        Texture sword;
     } spritesheet;
 } player_t;
 

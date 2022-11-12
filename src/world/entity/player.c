@@ -58,8 +58,13 @@ player_t *player_create(Vector2 position)
 
     player->base.state = ENTITY_STATE_IDLE;
 
+    player->attacked = false;
+    player->attacking = 0;
+
     player->spritesheet.moving = game_get_texture("player-moving");
+    player->spritesheet.damaging = game_get_texture("player-damaging");
     player->spritesheet.idle = game_get_texture("player-idle");
+    player->spritesheet.sword = game_get_texture("player-sword");
 
     return player;
 }
@@ -209,6 +214,9 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
     entity_t *enemy;
     player_t *player = (player_t *) base;
 
+    Rectangle player_rect;
+    Rectangle enemy_rect;
+
     Vector2 next_position = base->position;
 
     Vector2 bounds[4] = {
@@ -218,7 +226,20 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
         { ENTITY_TILE_SIZE / TILE_DRAW_SIZE, ENTITY_TILE_SIZE / TILE_DRAW_SIZE },
     };
 
+    static float hitted = 0;
+
+    if (player->attacked)
+        player->attacking = 0;
+
+    if (player->attacking > 0 && GetTime() - player->attacking >= 0.05) {
+        player->attacked = true;
+        player->attacking = 0;
+    }
+
     switch (base->state) {
+    case ENTITY_STATE_SPAWN:
+        break;
+
     case ENTITY_STATE_MOVING:
         base->frame.max = player->spritesheet.moving.width / ENTITY_SPRITE_SIZE;
 
@@ -242,16 +263,34 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
             }
         }
 
-        for (unsigned i = 1; i < list_size(*entities); i++) {
-            enemy = list_get(*entities, i);
+        break;
 
-            if (CheckCollisionRecs((Rectangle) {
-                    next_position.x, next_position.y,
-                    bounds[3].x, bounds[3].y }, (Rectangle) {
-                        enemy->position.x, enemy->position.y,
-                        bounds[3].x, bounds[3].y })) {
-                next_position = base->position;
+    case ENTITY_STATE_DAMAGING:
+        base->frame.max = player->spritesheet.damaging.width / ENTITY_SPRITE_SIZE;
+
+        next_position.x += cos(base->damage_direction) * (base->velocity / 2)
+            * GetFrameTime();
+
+        next_position.y += sin(base->damage_direction) * (base->velocity / 2)
+            * GetFrameTime();
+
+        for (int i = 0; i < 4; i++) {
+            for (int layer = 0; layer < MAP_MAX_LAYERS; layer++) {
+                if (tile_collision(map_tile(map, layer,
+                                next_position.x + bounds[i].x,
+                                base->position.y + bounds[i].y)))
+                    next_position.x = base->position.x;
+
+                if (tile_collision(map_tile(map, layer,
+                                base->position.x + bounds[i].x,
+                                next_position.y + bounds[i].y)))
+                    next_position.y = base->position.y;
             }
+        }
+
+        if (base->frame.current + 1 == base->frame.max) {
+            base->state = ENTITY_STATE_IDLE;
+            base->frame.current = 0;
         }
 
         break;
@@ -260,6 +299,74 @@ static void update(unsigned entity, entity_list_t *entities, map_t *map)
         base->frame.max = player->spritesheet.idle.width / ENTITY_SPRITE_SIZE;
         break;
     }
+
+    for (unsigned i = 1; i < list_size(*entities); i++) {
+        enemy = list_get(*entities, i);
+
+        player_rect = (Rectangle) {
+            .x = next_position.x,
+            .y = next_position.y,
+
+            .width = bounds[3].x,
+            .height = bounds[3].y,
+        };
+
+        enemy_rect = (Rectangle) {
+            .x = enemy->position.x,
+            .y = enemy->position.y,
+
+            .width = bounds[3].x,
+            .height = bounds[3].y,
+        };
+
+        if (base->state == ENTITY_STATE_MOVING
+                && CheckCollisionRecs(player_rect, enemy_rect)) {
+            base->state = ENTITY_STATE_DAMAGING;
+            base->frame.current = 0;
+
+            base->damage_direction = base->direction + UTILS_PI;
+            if (base->damage_direction > UTILS_PI * 2)
+                base->damage_direction -= UTILS_PI * 2;
+
+            if (hitted == 0) {
+                base->hearts -= max((enemy->attack - base->defense)
+                    * (rand() % 2), 5);
+
+                hitted = GetTime();
+            }
+
+            next_position = base->position;
+        }
+
+        player_rect.x += cos(base->direction) * player_rect.width;
+        player_rect.y += sin(base->direction) * player_rect.height;
+
+        if (player->attacking > 0 && CheckCollisionRecs(player_rect,
+                    enemy_rect)) {
+            enemy->state = ENTITY_STATE_DAMAGING;
+            enemy->frame.current = 0;
+
+            enemy->hearts -= max((base->attack - enemy->defense)
+                * (rand() % 2), 5);
+
+            enemy->damage_direction = base->direction;
+
+            if ((pointing_left(base->direction)
+                    && pointing_left(enemy->direction))
+                    || (pointing_right(base->direction)
+                        && pointing_right(enemy->direction))) {
+                enemy->direction += UTILS_PI;
+
+                if (enemy->direction > UTILS_PI * 2)
+                    enemy->direction -= UTILS_PI * 2;
+            }
+
+            player->attacked = true;
+        }
+    }
+
+    if (hitted > 0 && GetTime() - hitted >= 0.3)
+        hitted = 0;
 
     if (next_position.x < 0)
         next_position.x = 0;
@@ -300,8 +407,15 @@ static void draw(entity_t *base, Rectangle camera)
     };
 
     switch (base->state) {
+    case ENTITY_STATE_SPAWN:
+        break;
+
     case ENTITY_STATE_MOVING:
         spritesheet = player->spritesheet.moving;
+        break;
+
+    case ENTITY_STATE_DAMAGING:
+        spritesheet = player->spritesheet.damaging;
         break;
 
     case ENTITY_STATE_IDLE:
@@ -323,6 +437,22 @@ static void draw(entity_t *base, Rectangle camera)
         sprite.width = -sprite.width;
 
     DrawTexturePro(spritesheet, sprite, tile, (Vector2) { 0, 0 }, 0, WHITE);
+
+    if (player->attacking) {
+        // Disable the horizontal flip of the sword
+        sprite.width = fabs(sprite.width);
+
+        // Flip vertically the sword sprite
+        if (base->direction > deg2rad(90) && base->direction < deg2rad(270))
+            sprite.height = -sprite.height;
+
+        tile.x += tile.width / 2 + cos(base->direction) * tile.width;
+        tile.y += tile.height / 2 + sin(base->direction) * tile.height;
+
+        DrawTexturePro(player->spritesheet.sword, sprite, tile,
+            (Vector2) { tile.width / 2, tile.height / 2 },
+            rad2deg(base->direction), WHITE);
+    }
 }
 
 static void destroy(entity_t *player)
