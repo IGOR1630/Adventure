@@ -225,9 +225,32 @@ Vector2 game_virtual_touch(int touch_number)
     return touch;
 }
 
-bool game_touch_down(int touch_number)
+int game_touch_id(int touch_number)
+{ return GetTouchPointId(touch_number); }
+
+bool game_touch_down(int touch_id)
 {
-    int touch_id = GetTouchPointId(touch_number);
+    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
+        if (touch_id == list_get(g_game.touches.current, i))
+            return true;
+
+    return false;
+}
+
+bool game_touch_up(int touch_id)
+{
+    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
+        if (touch_id == list_get(g_game.touches.current, i))
+            return false;
+
+    return true;
+}
+
+bool game_touch_pressed(int touch_id)
+{
+    for (unsigned i = 0; i < list_size(g_game.touches.previous); i++)
+        if (touch_id == list_get(g_game.touches.previous, i))
+            return false;
 
     for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
         if (touch_id == list_get(g_game.touches.current, i))
@@ -236,27 +259,14 @@ bool game_touch_down(int touch_number)
     return false;
 }
 
-bool game_touch_up(int touch_number)
+bool game_touch_released(int touch_id)
 {
-    int touch_id = GetTouchPointId(touch_number);
-
     for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
         if (touch_id == list_get(g_game.touches.current, i))
             return false;
-
-    return true;
-}
-
-bool game_touch_pressed(int touch_number)
-{
-    int touch_id = GetTouchPointId(touch_number);
 
     for (unsigned i = 0; i < list_size(g_game.touches.previous); i++)
         if (touch_id == list_get(g_game.touches.previous, i))
-            return false;
-
-    for (unsigned i = 0; i < list_size(g_game.touches.current); i++)
-        if (touch_id == list_get(g_game.touches.current, i))
             return true;
 
     return false;
