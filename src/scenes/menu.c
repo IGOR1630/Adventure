@@ -23,13 +23,17 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "scene.h"
 #define NUM_FRAMES  3
 
-int RIGHT = 500, LEFT = 900,MID = 50;
+int RIGHT, LEFT, MID;
 
 Font alagard;
 Rectangle quadrado_girando = (Rectangle){580,368,15,15};
 
 scene_data_t *menu_init(void) {
     alagard = LoadFont("custom_alagard.png");
+
+    RIGHT = rand() % game_width();
+    LEFT = rand() % game_width();
+    MID = rand() % game_width();
 
     return NULL;
 }
