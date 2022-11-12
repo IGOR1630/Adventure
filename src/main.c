@@ -32,7 +32,6 @@ int main (int argc, char *argv[])
         SCENE_IMPORT(logo);
         game_register_scene(SCENE(logo));
 
-
         SCENE_IMPORT(tutorial);
         game_register_scene(SCENE(tutorial));
 
@@ -44,6 +43,9 @@ int main (int argc, char *argv[])
 
         SCENE_IMPORT(gameplay);
         game_register_scene(SCENE(gameplay));
+
+        SCENE_IMPORT(gameover);
+        game_register_scene(SCENE(gameover));
     }
 
     { // Resources

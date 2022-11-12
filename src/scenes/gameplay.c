@@ -302,7 +302,7 @@ static void update_game(scene_data_t *data)
             game_set_scene("menu");
     }
 
-    if (player->base.hearts == 0)
+    if (player->base.hearts <= 0)
         game_set_scene("gameover");
 }
 
