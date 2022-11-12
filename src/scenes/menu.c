@@ -1,7 +1,7 @@
 /*
 The GPLv3 License (GPLv3)
 
-Copyright (c) 2022 Jonatha Gabriel.
+Copyright (c) 2022 Jonatha Gabriel <jonathagabrielns@gmail.com>
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
@@ -56,7 +56,7 @@ void menu_update(void *data)
 
     if (CheckCollisionPointRec(game_virtual_mouse(), start_rect)) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-            game_set_scene("genmap");
+            game_set_scene("tutorial");
 
         quadrado_girando.y = 366;
     }
