@@ -52,7 +52,12 @@ void menu_update(void *data)
     ///L
     if (IsKeyDown(KEY_DOWN)) quadrado_girando.y = 430;
     if (IsKeyDown(KEY_UP)) quadrado_girando.y = 366;
-    if (IsKeyDown(KEY_ENTER)) game_end_run();
+    if (IsKeyDown(KEY_ENTER)) {
+        if (quadrado_girando.y == 366)
+            game_set_scene("tutorial");
+        else
+            game_end_run();
+    }
 
     if (CheckCollisionPointRec(game_virtual_mouse(), start_rect)) {
         if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
