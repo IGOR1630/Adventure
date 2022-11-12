@@ -34,6 +34,18 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define deg2rad(degrees) ((degrees) * (UTILS_PI / 180.0))
 #define rad2deg(radians) ((radians) * (180.0 / UTILS_PI))
 
+#define pointing_left(direction)                                               \
+    ((direction) > deg2rad(90) && (direction) < deg2rad(270))
+
+#define pointing_right(direction)                                              \
+    (!pointing_left(direction))
+
+#define pointing_up(direction)                                                 \
+    ((direction) < deg2rad(180) && (direction) > deg2rad(0))
+
+#define pointing_down(direction)                                               \
+    (!pointing_up(direction))
+
 #define max(x, y) ((x) > (y) ? (x) : (y))
 #define min(x, y) ((x) < (y) ? (x) : (y))
 
