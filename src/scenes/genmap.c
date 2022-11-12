@@ -48,6 +48,7 @@ enum {
     GENMAP_STEPS_STAGE1 = 10,
     GENMAP_STEPS_STAGE2 = 5,
     GENMAP_STEPS_STAGE4 = 5,
+    GENMAP_STEPS_STAGE6 = 1,
 };
 
 struct scene_data {
@@ -72,6 +73,7 @@ static void genmap_stage2(scene_data_t *data);
 static void genmap_stage3(scene_data_t *data);
 static void genmap_stage4(scene_data_t *data);
 static void genmap_stage5(scene_data_t *data);
+static void genmap_stage6(scene_data_t *data);
 
 // Helper functions
 static int stage1_count_neighbors(map_t *map, int x, int y);
@@ -100,19 +102,13 @@ scene_data_t *genmap_init(void)
 
         map_create(&data->map, map_width, map_height);
 
-        if (!player_exists())
-            data->player = player_create((Vector2) {
-                .x = map_width / 2 - 1,
-                .y = map_height / 2 - 1,
-            });
-
         if (!spawner_exists()) {
             list_create(data->spawn_points);
             spawner_create(&data->spawners);
         }
     } else {
         // Jump to the last stage that change to game scene
-        data->generation_stage = 6;
+        data->generation_stage = 7;
         data->generation_stage_time = 0;
 
         return data;
@@ -173,6 +169,9 @@ void genmap_update(scene_data_t *data)
     case 5:
         genmap_stage5(data);
         break;
+    case 6:
+        genmap_stage6(data);
+        break;
     default:
         game_set_scene("gameplay");
         return;
@@ -220,7 +219,7 @@ void genmap_draw(scene_data_t *data)
             case 2:
                 draw_layers = 1;
                 break;
-            case 3: case 4: case 5:
+            case 3: case 4: case 5: case 6:
                 draw_layers = 2;
                 break;
             }
@@ -531,6 +530,28 @@ static void genmap_stage5(scene_data_t *data)
     }
 
     stage5_generate_spawners(data, 40);
+}
+
+static void genmap_stage6(scene_data_t *data)
+{
+    Vector2 player_pos = (Vector2) {
+        .x = data->map.width / 2 - 1,
+        .y = data->map.height / 2 - 1,
+    };
+
+    if (data->generation_steps == 0)
+        data->generation_steps = GENMAP_STEPS_STAGE6;
+
+    if (player_exists())
+        return;
+
+    while (tile_collision(map_tile(&data->map, 0, player_pos.x, player_pos.y))
+            || tile_collision(map_tile(&data->map, 1, player_pos.x, player_pos.y))) {
+        player_pos.x--;
+        player_pos.y--;
+    }
+
+    data->player = player_create(player_pos);
 }
 
 static int stage1_count_neighbors(map_t *map, int x, int y)
