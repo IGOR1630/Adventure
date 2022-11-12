@@ -29,6 +29,13 @@ int main (int argc, char *argv[])
         return EXIT_FAILURE;
 
     { // Scenes
+        SCENE_IMPORT(logo);
+        game_register_scene(SCENE(logo));
+
+
+        SCENE_IMPORT(tutorial);
+        game_register_scene(SCENE(tutorial));
+
         SCENE_IMPORT(menu);
         game_register_scene(SCENE(menu));
 
@@ -40,6 +47,8 @@ int main (int argc, char *argv[])
     }
 
     { // Resources
+        game_load_texture("tela_logo.png", "tela_logo-img");
+
         game_load_texture("joystick.png", "joystick-img");
         game_load_texture("cloud.png", "cloud-img");
         game_load_texture("gram.png", "gram-img");
@@ -49,6 +58,11 @@ int main (int argc, char *argv[])
         game_load_texture("planttwo.png", "planttwo-img");
         game_load_texture("cogu.png", "cogu-img");
         game_load_texture("mushroom.png", "mushroom-img");
+
+        game_load_texture("key.png","key-img");
+        game_load_texture("wasd.png","wasd-img");
+        game_load_texture("map_with_player.png", "map_with_player-img");
+        game_load_texture("mapt.png","mapt-img");
 
         game_load_texture("tiles.png", "tiles");
 
@@ -72,7 +86,7 @@ int main (int argc, char *argv[])
         game_load_texture("sword.png", "player-sword");
     }
 
-    game_set_scene("menu");
+    game_set_scene("logo");
     game_run();
 
     game_deinit();
