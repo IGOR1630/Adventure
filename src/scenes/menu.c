@@ -21,7 +21,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "raylib.h"
 #include "game.h"
 #include "scene.h"
-#define NUM_FRAMES  3
 
 int RIGHT, LEFT, MID;
 
@@ -47,6 +46,8 @@ void menu_update(void *data)
     Rectangle exit_rect = {
         614, 405, MeasureTextEx(alagard, "Exit", 50, -1).x, 50
     };
+
+    (void) data;
 
     ///L
     if (IsKeyDown(KEY_DOWN)) quadrado_girando.y = 430;
@@ -78,6 +79,8 @@ void menu_update(void *data)
 
 void menu_draw(void *data)
 {
+    (void) data;
+
     Texture joystick = game_get_texture("joystick-img");
     Texture cloud = game_get_texture("cloud-img");
     Texture gram = game_get_texture("gram-img");
@@ -142,6 +145,12 @@ void menu_draw(void *data)
 
 void menu_deinit(void *data)
 {
-    UnloadFont(alagard);
+    (void) data;
+
+    // This line breaks the game and I don't now why so memory leak here :)
+    // When called a second time after try to go to another scene this closes
+    // the game.
+    //
+    // UnloadFont(data->alagard);
 }
 
