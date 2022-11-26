@@ -17,38 +17,39 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <stdlib.h>
-#include<locale.h>
 #include "raylib.h"
-#include "game.h"
-#include "scene.h"
-#define NUM_FRAMES  3
-scene_data_t *logo_init(void) {
- setlocale(LC_ALL,"portuguese");
+#include "core/game.h"
+#include "core/scene.h"
+
+scene_data_t *logo_init(void)
+{
     return NULL;
 }
 
-void logo_update(void *data){
+void logo_update(scene_data_t *data)
+{
     static float time = 0;
 
-    if (time > 0 && GetTime() - time >= 6)
-        game_set_scene("menu");
+    if (time > 0 && GetTime() - time >= 3.5)
+        game_scene_make_current("menu");
     else if (time == 0)
         time = GetTime();
 }
 
-void logo_draw(void *data)
+void logo_draw(scene_data_t *data)
 {
+    Texture logo = game_texture_get("tela_logo-img");
 
-    Texture tela_logo = game_get_texture("tela_logo-img");
+    (void) data;
 
     ClearBackground(GetColor(0x038c7fff));
     DrawRectangleGradientV(0, 0, 1280, 720, GetColor(0x038c7fff), GOLD);
-    //AMARELO 0xfeae34fff
 
-    DrawTexture(tela_logo,0,0,WHITE);
+    DrawTexture(logo, 0, 0, WHITE);
 }
-void logo_deinit(void *data)
+
+void logo_deinit(scene_data_t *data)
 {
+    (void) data;
 }
 

@@ -398,8 +398,7 @@ FILE *android_fopen(const char *fileName, const char *mode)
             TRACELOG(LOG_INFO, "%s/%s", internalDataPath, fileName);
             #undef fopen
             // Just do a regular open if file is not found in the assets
-            //FILE *f = fopen(TextFormat("%s/%s", internalDataPath, fileName), mode);
-            return fopen(fileName, mode);
+            return fopen(TextFormat("%s/%s", internalDataPath, fileName), mode);
             #define fopen(name, mode) android_fopen(name, mode)
         }
     }
