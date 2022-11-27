@@ -153,7 +153,8 @@ bool game_scene_make_current(const char *scene_name)
 
     if (scene_name == NULL)
         return false;
-    else if (strcmp(scene_name, g_game.scene.current.name) == 0)
+    else if (g_game.scene.current.name != NULL
+            && strcmp(scene_name, g_game.scene.current.name) == 0)
         return false;
 
     // Try fetch a scene by your name
@@ -163,10 +164,12 @@ bool game_scene_make_current(const char *scene_name)
 
     // If successfully found the scene make the game pending the scene change if
     // a scene was already has a current scene
-    if (g_game.scene.current.name == NULL)
+    if (g_game.scene.current.name == NULL) {
         g_game.scene.current = scene;
-    else
+        g_game.scene.data = scene.init();
+    } else {
         g_game.scene.pending = scene;
+    }
 
     return true;
 }
@@ -380,8 +383,16 @@ bool game_touch_is_released(int touch_id)
 
 Texture game_texture_load(const char *filename, const char *name)
 {
-    Texture texture = LoadTexture(filename);
+    Texture texture;
+
+    if (strcmp(game_get_platform(), "Android") != 0)
+        ChangeDirectory("assets");
+
+    texture = LoadTexture(filename);
     hash_add(g_game.textures, name, texture);
+
+    if (strcmp(game_get_platform(), "Android") != 0)
+        ChangeDirectory("..");
 
     return texture;
 }
@@ -396,8 +407,16 @@ Texture game_texture_get(const char *name)
 
 Font game_font_load(const char *filename, const char *name)
 {
-    Font font = LoadFont(filename);
+    Font font;
+
+    if (strcmp(game_get_platform(), "Android") != 0)
+        ChangeDirectory("assets");
+
+    font = LoadFont(filename);
     hash_add(g_game.fonts, name, font);
+
+    if (strcmp(game_get_platform(), "Android") != 0)
+        ChangeDirectory("..");
 
     return font;
 }
