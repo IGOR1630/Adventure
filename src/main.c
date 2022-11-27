@@ -34,7 +34,7 @@ int main (int argc, char *argv[])
     }
 
     { // Resources
-        game_texture_load("tela_logo.png", "tela_logo-img");
+        game_texture_load("logo.png", "logo-logo");
     }
 
     game_scene_make_current("logo");
