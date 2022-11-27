@@ -17,39 +17,42 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <stdlib.h>
 #include "raylib.h"
 #include "core/game.h"
 #include "core/scene.h"
 
+struct scene_data {
+    Texture logo;
+    float time;
+};
+
 scene_data_t *logo_init(void)
 {
-    return NULL;
+    scene_data_t *data = malloc(sizeof(scene_data_t));
+
+    data->logo = game_texture_get("logo-logo");
+    data->time = GetTime();
+
+    return data;
 }
 
 void logo_update(scene_data_t *data)
 {
-    static float time = 0;
-
-    if (time > 0 && GetTime() - time >= 3.5)
+    if (GetTime() - data->time >= 3.5)
         game_scene_make_current("menu");
-    else if (time == 0)
-        time = GetTime();
 }
 
 void logo_draw(scene_data_t *data)
 {
-    Texture logo = game_texture_get("tela_logo-img");
-
-    (void) data;
-
     ClearBackground(GetColor(0x038c7fff));
     DrawRectangleGradientV(0, 0, 1280, 720, GetColor(0x038c7fff), GOLD);
 
-    DrawTexture(logo, 0, 0, WHITE);
+    DrawTexture(data->logo, 0, 0, WHITE);
 }
 
 void logo_deinit(scene_data_t *data)
 {
-    (void) data;
+    free(data);
 }
 
