@@ -53,7 +53,7 @@ void tutorial_draw(void *data)
     //AMARELO 0xfeae34fff
 ///DRAW INFORMATIONS
      DrawTextEx(alagard,"LOADING... ", (Vector2) { 10, 50 }, 20, -1, BLACK);
-      DrawTextEx(alagard,"HOW PLAY?", (Vector2) { 400, 50 }, 75, -1, GOLD);
+      DrawTextEx(alagard,"HOW TO PLAY?", (Vector2) { 400, 50 }, 75, -1, GOLD);
       DrawTextEx(alagard,"1-ADVENTURE is an  ", (Vector2) { 10, 520 }, 30, -1, WHITE);
       DrawTextEx(alagard,"action and adventure ", (Vector2) { 10, 550 }, 30, -1, WHITE);
       DrawTextEx(alagard,"game and your ", (Vector2) { 10, 580 }, 30, -1, WHITE);
